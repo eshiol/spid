@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="plugin" group="authentication" method="upgrade">
+	<name>plg_authentication_cie</name>
+	<author>Helios Ciancio</author>
+	<creationDate>19 August 2022</creationDate>
+	<copyright>(C) 2022 Helios Ciancio. All rights reserved.</copyright>
+	<license>http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3</license>
+	<authorEmail>info@eshiol.it</authorEmail>
+	<authorUrl>www.eshiol.it</authorUrl>
+	<version>3.10.0.3</version>
+	<description>PLG_AUTHENTICATION_CIE_XML_DESCRIPTION</description>
+	<files>
+		<filename plugin="cie">cie.php</filename>
+		<folder>tmpl</folder>
+	</files>
+	<languages folder="language">
+		<language tag="en-GB">en-GB/en-GB.plg_authentication_cie.ini</language>
+		<language tag="en-GB">en-GB/en-GB.plg_authentication_cie.sys.ini</language>
+		<language tag="it-IT">it-IT/it-IT.plg_authentication_cie.ini</language>
+		<language tag="it-IT">it-IT/it-IT.plg_authentication_cie.sys.ini</language>
+	</languages>
+	<media destination="plg_authentication_cie" folder="media">
+		<folder>css</folder>
+		<folder>images</folder>
+	</media>
+	<config>
+		<fields name="params">
+			<fieldset name="basic">
+				<field
+					name="preproduzione"
+					type="radio"
+					description="PLG_AUTHENTICATION_CIE_PREPRODUZIONE_SYSTEM_DESC"
+					label="PLG_AUTHENTICATION_CIE_PREPRODUZIONE_SYSTEM_LABEL"
+					class="btn-group btn-group-yesno"
+					default="1">
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+			</fieldset>
+			<fieldset name="advanced">
+				<field
+					name="spid-php_path"
+					type="text"
+					label="PLG_AUTHENTICATION_CIE_FIELD_SPIDPHP_PATH_LABEL"
+					description="PLG_AUTHENTICATION_CIE_FIELD_SPIDPHP_PATH_DESC"
+					required="true"
+					filter="string"
+					size="50"
+				/>
+				<field
+					name="environment"
+					type="list"
+					description="PLG_AUTHENTICATION_CIE_FIELD_ENVIRONMENT_DESC"
+					label="PLG_AUTHENTICATION_CIE_FIELD_ENVIRONMENT_LABEL"
+					default="1">
+					<option value="1">PLG_AUTHENTICATION_CIE_FIELD_ENVIRONMENT_TESTING</option>
+					<option value="2">PLG_AUTHENTICATION_CIE_FIELD_ENVIRONMENT_STAGING</option>
+					<option value="3">PLG_AUTHENTICATION_CIE_FIELD_ENVIRONMENT_PRODUCTION</option>
+				</field>
+
+				<field
+					name="debug"
+					type="radio"
+					description="PLG_AUTHENTICATION_CIE_DEBUG_SYSTEM_DESC"
+					label="PLG_AUTHENTICATION_CIE_DEBUG_SYSTEM_LABEL"
+					class="btn-group btn-group-yesno"
+					default="0">
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field
+					name="log"
+					type="text"
+					description="PLG_AUTHENTICATION_CIE_DEBUG_FILENAME_DESC"
+					label="PLG_AUTHENTICATION_CIE_DEBUG_FILENAME_LABEL"
+					default="eshiol.log.php"
+					showon="debug:1"/>
+			</fieldset>
+		</fields>
+	</config>
+</extension>
