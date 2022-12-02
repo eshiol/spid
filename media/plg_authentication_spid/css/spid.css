@@ -1,0 +1,52 @@
+@charset "UTF-8";
+[class*=" spid-"]:before,[class^=spid-]:before,[data-icon]:before{
+	font-family:spid!important;
+	font-style:normal!important;
+	font-weight:400!important;
+	font-variant:normal!important;
+	text-transform:none!important;
+	speak:none;
+	line-height:1;
+	-webkit-font-smoothing:antialiased;
+	-moz-osx-font-smoothing:grayscale
+}
+@font-face{
+	font-family:spid;
+	src:url(../fonts/spid.eot);
+	src:url(../fonts/spid.eot?#iefix) format("embedded-opentype"),
+		url(../fonts/spid.woff) format("woff"),
+		url(../fonts/spid.ttf) format("truetype"),
+		url(../fonts/spid.svg#spid-svg) format("svg");
+	font-weight:400;
+	font-style:normal
+}
+[data-icon]:before{
+	content:attr(data-icon)
+}
+.spid-spid:before{
+	content:"\23"
+}
+.spid-spidl1:before{
+	content:"\24"
+}
+.spid-spidl2:before{
+	content:"\25"
+}
+.spid-spidl3:before{
+	content:"\26"
+}
+.italia-it-button-icon .icon {
+	font-size: xx-large;
+}
+.spid-agid {
+	display: block;
+	margin-top: 1rem;
+	max-width: 214px;
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+	.spid-agid {
+		max-width: 259px;
+	}
+}
