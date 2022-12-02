@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+	<fields name="profile">
+		<fieldset name="profile" label="PLG_USER_SPID_SLIDER_LABEL">
+			<field
+				name="spid"
+				type="hidden"
+				filter="boolean" 
+				description="PLG_USER_SPID_FIELD_SPID_DESC"
+				label="PLG_USER_SPID_FIELD_SPID_LABEL" />
+
+			<field
+				name="spidCode"
+				type="text"
+				description="PLG_USER_SPID_FIELD_SPIDCODE_DESC"
+				label="PLG_USER_SPID_FIELD_SPIDCODE_LABEL"
+				default="" />
+
+			<field
+				name="name"
+				type="text"
+				description="PLG_USER_SPID_FIELD_NAME_DESC"
+				label="PLG_USER_SPID_FIELD_NAME_LABEL"
+				default="" />
+
+			<field
+				name="familyName"
+				type="text"
+				description="PLG_USER_SPID_FIELD_FAMILYNAME_DESC"
+				label="PLG_USER_SPID_FIELD_FAMILYNAME_LABEL"
+				default="" />
+
+			<field
+				name="placeOfBirth"
+				type="text"
+				description="PLG_USER_SPID_FIELD_PLACEOFBIRTH_DESC"
+				label="PLG_USER_SPID_FIELD_PLACEOFBIRTH_LABEL"
+				default="" />
+
+			<field
+				name="countyOfBirth"
+				type="text"
+				description="PLG_USER_SPID_FIELD_COUNTYOFBIRTH_DESC"
+				label="PLG_USER_SPID_FIELD_COUNTYOFBIRTH_LABEL"
+				default="" />
+
+			<field
+				name="dateOfBirth"
+				type="calendar"
+				description="PLG_USER_SPID_FIELD_DATEOFBIRTH_DESC"
+				label="PLG_USER_SPID_FIELD_DATEOFBIRTH_LABEL"
+				showtime="false" />
+
+			<field
+				name="gender"
+				type="list"
+				description="PLG_USER_SPID_FIELD_GENDER_DESC"
+				label="PLG_USER_SPID_FIELD_GENDER_LABEL"
+				default="">
+				<option value="">JLIB_UNKNOWN</option>
+				<option value="F">PLG_USER_SPID_FIELD_GENDER_F</option>
+				<option value="M">PLG_USER_SPID_FIELD_GENDER_M</option>
+			</field>
+
+			<field
+				name="companyName"
+				type="text"
+				description="PLG_USER_SPID_FIELD_COMPANYNAME_DESC"
+				label="PLG_USER_SPID_FIELD_COMPANYNAME_LABEL"
+				default="" />
+
+			<field
+				name="registeredOffice"
+				type="text"
+				description="PLG_USER_SPID_FIELD_REGISTEREDOFFICE_DESC"
+				label="PLG_USER_SPID_FIELD_REGISTEREDOFFICE_LABEL"
+				default="" />
+
+			<field
+				name="fiscalNumber"
+				type="text"
+				description="PLG_USER_SPID_FIELD_FISCALNUMBER_DESC"
+				label="PLG_USER_SPID_FIELD_FISCALNUMBER_LABEL"
+				default="" />
+
+			<field
+				name="companyFiscalNumber"
+				type="text"
+				description="PLG_USER_SPID_FIELD_COMPANYFISCALNUMBER_DESC"
+				label="PLG_USER_SPID_FIELD_COMPANYFISCALNUMBER_LABEL"
+				default="" />
+
+			<field
+				name="ivaCode"
+				type="text"
+				description="PLG_USER_SPID_FIELD_IVACODE_DESC"
+				label="PLG_USER_SPID_FIELD_IVACODE_LABEL"
+				default="" />
+
+			<field
+				name="idCard"
+				type="text"
+				description="PLG_USER_SPID_FIELD_IDCARD_DESC"
+				label="PLG_USER_SPID_FIELD_IDCARD_LABEL"
+				default="" />
+
+			<field
+				name="mobilePhone"
+				type="text"
+				description="PLG_USER_SPID_FIELD_MOBILEPHONE_DESC"
+				label="PLG_USER_SPID_FIELD_MOBILEPHONE_LABEL"
+				default="" />
+
+			<field
+				name="email"
+				type="text"
+				description="PLG_USER_SPID_FIELD_EMAIL_DESC"
+				label="PLG_USER_SPID_FIELD_EMAIL_LABEL"
+				default="" />
+
+			<field
+				name="expirationDate"
+				type="text"
+				description="PLG_USER_SPID_FIELD_EXPIRATIONDATE_DESC"
+				label="PLG_USER_SPID_FIELD_EXPIRATIONDATE_LABEL"
+				default="" />
+
+			<field
+				name="digitalAddress"
+				type="text"
+				description="PLG_USER_SPID_FIELD_DIGITALADDRESS_DESC"
+				label="PLG_USER_SPID_FIELD_DIGITALADDRESS_LABEL"
+				default="" />
+
+			<field
+				name="domicileStreetAddress"
+				type="text"
+				description="PLG_USER_SPID_FIELD_DOMICILESTREETADDRESS_DESC"
+				label="PLG_USER_SPID_FIELD_DOMICILESTREETADDRESS_LABEL"
+				default="" />
+
+			<field
+				name="domicilePostalCode"
+				type="text"
+				description="PLG_USER_SPID_FIELD_DOMICILEPOSTALCODE_DESC"
+				label="PLG_USER_SPID_FIELD_DOMICILEPOSTALCODE_LABEL"
+				default="" />
+
+			<field
+				name="domicileMunicipality"
+				type="text"
+				description="PLG_USER_SPID_FIELD_DOMICILEMUNICIPALITY_DESC"
+				label="PLG_USER_SPID_FIELD_DOMICILEMUNICIPALITY_LABEL"
+				default="" />
+
+			<field
+				name="domicileProvince"
+				type="text"
+				description="PLG_USER_SPID_FIELD_DOMICILEPROVINCE_DESC"
+				label="PLG_USER_SPID_FIELD_DOMICILEPROVINCE_LABEL"
+				default="" />
+
+			<field
+				name="domicileNation"
+				type="text"
+				description="PLG_USER_SPID_FIELD_DOMICILENATION_DESC"
+				label="PLG_USER_SPID_FIELD_DOMICILENATION_LABEL"
+				default="" />
+
+			<field
+				name="loa"
+				type="list"
+				description="PLG_USER_SPID_FIELD_LOA_DESC"
+				label="PLG_USER_SPID_FIELD_LOA_LABEL"
+				default="">
+				<option value="">JGLOBAL_USE_GLOBAL</option>
+				<option value="1">SpidL1</option>
+				<option value="2">SpidL2</option>
+				<option value="3">SpidL3</option>
+			</field>
+		</fieldset>
+	</fields>
+</form>
