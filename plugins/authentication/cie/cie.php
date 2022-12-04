@@ -97,7 +97,7 @@ class plgAuthenticationCie extends CMSPlugin
 
 		$environment = (int) $this->params->get('environment', 1);
 		$production  = ($environment == 3);
-		$service     = 'cieid'; //(empty($_REQUEST['service']) ? 'cieid' : $_REQUEST['service']);
+		$service     = (empty($_REQUEST['service']) ? 'cieid' : $_REQUEST['service']);
 		$spidsdk     = new CiE($production, $service);
 
 		if ($spidsdk->isAuthenticated() && isset($_REQUEST['idp']) && $spidsdk->isIdP($_REQUEST['idp']))
