@@ -1,7 +1,7 @@
 <?php
 /**
  * @package     Joomla.Plugins
- * @subpackage  User.SPiD
+ * @subpackage  Authentication.SPiD
  *
  * @version     __DEPLOY_VERSION__
  * @since       3.7
@@ -129,6 +129,9 @@ class SpidModelRegistration extends UsersModelRegistration
 				$data['sitename'],
 				$data['siteurl']
 			);
+
+			// Send the registration email.
+			$return = Factory::getMailer()->sendMail($data['mailfrom'], $data['fromname'], $data['email'], $emailSubject, $emailBody);
 		}
 		elseif ($useractivation == 1)
 		{
@@ -151,25 +154,34 @@ class SpidModelRegistration extends UsersModelRegistration
 				$data['siteurl'],
 				$data['username']
 				);
+
+			// Send the registration email.
+			$return = Factory::getMailer()->sendMail($data['mailfrom'], $data['fromname'], $data['email'], $emailSubject, $emailBody);
 		}
 		else
 		{
-			$emailSubject = Text::sprintf(
-				'COM_USERS_EMAIL_ACCOUNT_DETAILS',
-				$data['name'],
-				$data['sitename']
-				);
+			$plugin     = PluginHelper::getPlugin('authentication', 'spid');
+			$spidParams = new Registry($plugin->params);
+		
+			if ($spidParams->get('mailToUser', 1))
+			{
+				$emailSubject = Text::sprintf(
+					'COM_USERS_EMAIL_ACCOUNT_DETAILS',
+					$data['name'],
+					$data['sitename']
+					);
 
-			$emailBody = Text::sprintf(
-				'COM_USERS_EMAIL_REGISTERED_BODY_NOPW',
-				$data['name'],
-				$data['sitename'],
-				$data['siteurl']
-				);
+				$emailBody = Text::sprintf(
+					'COM_USERS_EMAIL_REGISTERED_BODY_NOPW',
+					$data['name'],
+					$data['sitename'],
+					$data['siteurl']
+					);
+
+				// Send the registration email.
+				$return = Factory::getMailer()->sendMail($data['mailfrom'], $data['fromname'], $data['email'], $emailSubject, $emailBody);
+			}
 		}
-
-		// Send the registration email.
-		$return = Factory::getMailer()->sendMail($data['mailfrom'], $data['fromname'], $data['email'], $emailSubject, $emailBody);
 
 		// Admin activation is on
 		if ($useractivation == 2)
@@ -364,7 +376,11 @@ class SpidModelRegistration extends UsersModelRegistration
 				}
 			}
 
-			return false;
+			// the user is registered successfully, but an error occurred while sending email. exit if user activation is required
+			if ($useractivation)
+			{
+				return false;
+			}
 		}
 
 		if ($useractivation == 1)
