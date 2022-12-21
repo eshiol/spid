@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<extension version="3.9" type="library" method="upgrade">
+<extension type="library" method="upgrade">
 	<name>SPiD</name>
 	<libraryname>eshiol/SPiD</libraryname>
 	<description>SPiD Library.</description>
 	<author>Helios Ciancio</author>
 	<authorEmail>info (at) eshiol (dot) it</authorEmail>
 	<authorUrl>www.eshiol.it</authorUrl>
-	<creationDate>18 August 2022</creationDate>
+	<creationDate>__DEPLOY_DATE__</creationDate>
 	<copyright><![CDATA[(C) 2022 Helios Ciancio. All Rights Reserved.]]></copyright>
 	<license>http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3</license>
-	<version>3.10.0.0</version>
+	<version>__DEPLOY_VERSION__</version>
 	<files>
     	<filename>SPiD.php</filename>
     	<filename>CiE.php</filename>
