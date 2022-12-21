@@ -41,7 +41,16 @@ if (!defined('JPATH_SPIDPHP'))
 	$params = new Registry($plugin->params);
 	define('JPATH_SPIDPHP', $params->get('spid-php_path', JPATH_LIBRARIES . '/eshiol/spid-php'));
 }
-require_once(JPATH_SPIDPHP . '/spid-php.php');
+defined('JPATH_SPIDPHP_SIMPLESAMLPHP') or define('JPATH_SPIDPHP_SIMPLESAMLPHP', JPATH_SPIDPHP . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'simplesamlphp' . DIRECTORY_SEPARATOR . 'simplesamlphp');
+if (file_exists(JPATH_SPIDPHP . '/spid-php.php'))
+{
+	require_once(JPATH_SPIDPHP . '/spid-php.php');
+}
+
+/*if (LibraryHelper::isEnabled('eshiol/SPiD'))
+{
+	require_once(JPATH_LIBRARIES . '/eshiol/SPiD/SPiD.php');
+}*/
 jimport('eshiol.SPiD.SPiD');
 
 class plgAuthenticationSpid extends CMSPlugin
@@ -107,6 +116,20 @@ class plgAuthenticationSpid extends CMSPlugin
 
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_authentication_spid'));
 
+		if (!$this->checkSPiD())
+		{
+			// Disable all SPiD plugins
+			$db = Factory::getDbo();
+			$query = $db->getQuery(true);
+			$query->update($db->quoteName('#__extensions'))
+				->set($db->quoteName('enabled') . ' = 0')
+				->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+				->where($db->quoteName('folder') . ' = ' . $db->quote('spid'));
+			JLog::add(new JLogEntry($query, JLog::DEBUG, 'plg_authentication_spid'));
+			$db->setQuery($query)->execute();
+
+			return;
+		}
 	}
 
 	/**
@@ -121,6 +144,16 @@ class plgAuthenticationSpid extends CMSPlugin
 	public function onUserAuthenticate($credentials, $options, &$response)
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_authentication_spid'));
+
+		if ($this->app->isClient('administrator'))
+		{
+			return;
+		}
+
+		if (!$this->checkSPiD())
+		{
+			return;
+		}
 
 		$environment = (int) $this->params->get('environment', 1);
 		$production  = ($environment == 3);
@@ -432,8 +465,12 @@ class plgAuthenticationSpid extends CMSPlugin
 					}
 					else
 					{
-						$this->app->enqueueMessage(Text::_('COM_USERS_REGISTRATION_SAVE_SUCCESS'));
-						$this->app->redirect(JRoute::_('index.php?option=com_users&view=login', false));
+						if ($this->params->get('thankYouMessage', 1))
+						{
+							$this->app->enqueueMessage(Text::_('PLG_AUTHENTICATION_SPID_REGISTRATION_SAVE_SUCCESS'));
+						}
+						$redirect_url = base64_decode($this->app->input->get('return', null, 'BASE64'));
+						$this->app->redirect(JRoute::_($redirect_url ? 'index.php?Itemid=' . $redirect_url : 'index.php?option=com_users&view=login', false));
 					}
 				}
 
@@ -448,7 +485,7 @@ class plgAuthenticationSpid extends CMSPlugin
 
 			Log::add(new LogEntry(print_r($response, true), Log::DEBUG, 'plg_authentication_spid'));
 		}
-		else
+		elseif (isset($_REQUEST['idp']))
 		{
 			Log::add(new LogEntry('Authenticating...', Log::DEBUG, 'plg_authentication_spid'));
 			Log::add(new LogEntry(print_r($_REQUEST, true), Log::DEBUG, 'plg_authentication_spid'));
@@ -473,6 +510,11 @@ class plgAuthenticationSpid extends CMSPlugin
 	public function onAuthenticationAddLoginTab()
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_authentication_spid'));
+
+		if (!$this->checkSPiD())
+		{
+			return;
+		}
 
 		$tab            = array();
 		$tab['name']    = 'spid';
@@ -510,4 +552,57 @@ class plgAuthenticationSpid extends CMSPlugin
 
 		return $value ?: $default;
 	}
+
+	protected function checkSPiD()
+	{
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_authentication_spid'));
+
+		if (!file_exists(JPATH_SPIDPHP . '/spid-php.php'))
+		{
+			if ($this->params->get('debug', 0))
+			{
+				Log::add(new LogEntry('PLG_AUTHENTICATION_SPID_SPIDPHPNOTFOUND', Log::ERROR, 'PLG_AUTHENTICATION_SPID'));
+			}
+			return false;
+		}
+		elseif (!LibraryHelper::isEnabled('eshiol/SPiD'))
+		{
+			if ($this->params->get('debug', 0))
+			{
+				Log::add(new LogEntry('PLG_AUTHENTICATION_SPID_SPIDLIBRARYDISABLED', Log::ERROR, 'PLG_AUTHENTICATION_SPID'));
+			}
+			return false;
+		}
+		elseif (!file_exists(JPATH_SPIDPHP_SIMPLESAMLPHP . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php'))
+		{
+			if ($this->params->get('debug', 0))
+			{
+				Log::add(new LogEntry('PLG_AUTHENTICATION_SPID_CONFIGFILENOTFOUND', Log::ERROR, 'PLG_AUTHENTICATION_SPID'));
+			}
+			return false;
+		}
+		elseif (!file_exists(JPATH_SPIDPHP_SIMPLESAMLPHP . DIRECTORY_SEPARATOR . 'metadata' . DIRECTORY_SEPARATOR . 'saml20-idp-remote.php'))
+		{
+			if ($this->params->get('debug', 0))
+			{
+				Log::add(new LogEntry('PLG_AUTHENTICATION_SPID_METADATANOTFOUND', Log::ERROR, 'PLG_AUTHENTICATION_SPID'));
+			}
+			return false;
+		}
+		else
+		{
+			include JPATH_SPIDPHP_SIMPLESAMLPHP . '/config/authsources.php';
+
+			if (!file_exists(JPATH_SPIDPHP_SIMPLESAMLPHP . DIRECTORY_SEPARATOR . 'cert' . DIRECTORY_SEPARATOR . $config['service']['privatekey']))
+			{
+				if ($this->params->get('debug', 0))
+				{
+					Log::add(new LogEntry('PLG_AUTHENTICATION_SPID_CERTNOTFOUND', Log::ERROR, 'PLG_AUTHENTICATION_SPID'));
+				}
+				return false;
+			}
+		}
+		return true;
+	}
+
 }
