@@ -18,15 +18,32 @@
 
 defined('_JEXEC') or die();
 
-defined('JPATH_SPIDPHP') or define('JPATH_SPIDPHP', JPATH_LIBRARIES . DIRECTORY_SEPARATOR . 'eshiol' . DIRECTORY_SEPARATOR . 'spid-php');
-defined('JPATH_SPIDPHP_SIMPLESAMLPHP') or define('JPATH_SPIDPHP_SIMPLESAMLPHP', JPATH_SPIDPHP . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'simplesamlphp' . DIRECTORY_SEPARATOR . 'simplesamlphp');
-
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\LibraryHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Log\LogEntry;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\Registry\Registry;
+
+if (!defined('JPATH_SPIDPHP'))
+{
+	$plugin = PluginHelper::getPlugin('authentication', 'spid');
+	$params = new Registry($plugin->params);
+	define('JPATH_SPIDPHP', $params->get('spid-php_path', JPATH_LIBRARIES . '/eshiol/spid-php'));
+}
+defined('JPATH_SPIDPHP_SIMPLESAMLPHP') or define('JPATH_SPIDPHP_SIMPLESAMLPHP', JPATH_SPIDPHP . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'simplesamlphp' . DIRECTORY_SEPARATOR . 'simplesamlphp');
+if (file_exists(JPATH_SPIDPHP . '/spid-php.php'))
+{
+	require_once(JPATH_SPIDPHP . '/spid-php.php');
+}
+
+/*if (LibraryHelper::isEnabled('eshiol/SPiD'))
+{
+	require_once(JPATH_LIBRARIES . '/eshiol/SPiD/SPiD.php');
+}*/
+jimport('eshiol.SPiD.SPiD');
 
 /**
  * System SPiD Plugin.
@@ -69,7 +86,7 @@ class plgSystemSpid extends CMSPlugin
 		
 		if ($this->params->get('debug') || defined('JDEBUG') && JDEBUG)
 		{
-			Log::addLogger(array('text_file' => $this->params->get('log', 'eshiol.log.php'), 'extension' => 'plg_system_spid_file'), Log::DEBUG, array('plg_system_spid'));
+			Log::addLogger(array('text_file' => $this->params->get('log', 'eshiol.log.php'), 'extension' => 'plg_system_spid_file'), Log::ALL, array('plg_system_spid'));
 		}
 		Log::addLogger(array('logger' => (null !== $this->params->get('logger')) ?$this->params->get('logger') : 'messagequeue', 'extension' => 'plg_system_spid'), LOG::ALL & ~LOG::DEBUG, array('plg_system_spid'));
 		
@@ -85,6 +102,12 @@ class plgSystemSpid extends CMSPlugin
 	public function onAfterInitialise ()
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_system_spid'));
+		Log::add(new LogEntry(print_r($_REQUEST, true), Log::DEBUG, 'plg_system_spid'));
+
+		if (!$this->checkSPiD())
+		{
+			return;
+		}
 
 		if (array_key_exists('statusCode', $_REQUEST))
 		{
@@ -125,24 +148,38 @@ class plgSystemSpid extends CMSPlugin
 
 	protected function checkSPiD()
 	{
-		if (! LibraryHelper::isEnabled('eshiol/spid-php'))
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_system_spid'));
+
+		if (!file_exists(JPATH_SPIDPHP . '/spid-php.php'))
 		{
+			Log::add(new LogEntry(__LINE__, Log::ERROR, 'plg_system_spid'));
 			if ($this->params->get('debug', 0))
 			{
-				Log::add(new LogEntry('PLG_SYSTEM_SPID_SPIDPHPLIBRARYDISABLED', Log::ERROR, 'plg_system_spid'));
+				Log::add(new LogEntry('PLG_SYSTEM_SPID_SPIDPHPNOTFOUND', Log::ERROR, 'plg_system_spid'));
 			}
 			return false;
 		}
-		elseif (! file_exists(JPATH_SPIDPHP_SIMPLESAMLPHP . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php'))
+		elseif (!LibraryHelper::isEnabled('eshiol/SPiD'))
 		{
+			Log::add(new LogEntry(__LINE__, Log::ERROR, 'plg_system_spid'));
+			if ($this->params->get('debug', 0))
+			{
+				Log::add(new LogEntry('PLG_SYSTEM_SPID_SPIDLIBRARYDISABLED', Log::ERROR, 'plg_system_spid'));
+			}
+			return false;
+		}
+		elseif (!file_exists(JPATH_SPIDPHP_SIMPLESAMLPHP . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php'))
+		{
+			Log::add(new LogEntry(__LINE__, Log::ERROR, 'plg_system_spid'));
 			if ($this->params->get('debug', 0))
 			{
 				Log::add(new LogEntry('PLG_SYSTEM_SPID_CONFIGFILENOTFOUND', Log::ERROR, 'plg_system_spid'));
 			}
 			return false;
 		}
-		elseif (! file_exists(JPATH_SPIDPHP_SIMPLESAMLPHP . DIRECTORY_SEPARATOR . 'metadata' . DIRECTORY_SEPARATOR . 'saml20-idp-remote.php'))
+		elseif (!file_exists(JPATH_SPIDPHP_SIMPLESAMLPHP . DIRECTORY_SEPARATOR . 'metadata' . DIRECTORY_SEPARATOR . 'saml20-idp-remote.php'))
 		{
+			Log::add(new LogEntry(__LINE__, Log::ERROR, 'plg_system_spid'));
 			if ($this->params->get('debug', 0))
 			{
 				Log::add(new LogEntry('PLG_SYSTEM_SPID_METADATANOTFOUND', Log::ERROR, 'plg_system_spid'));
@@ -151,9 +188,10 @@ class plgSystemSpid extends CMSPlugin
 		}
 		else
 		{
+			Log::add(new LogEntry(__LINE__, Log::ERROR, 'plg_system_spid'));
 			include JPATH_SPIDPHP_SIMPLESAMLPHP . '/config/authsources.php';
 
-			if (! file_exists(JPATH_SPIDPHP_SIMPLESAMLPHP . DIRECTORY_SEPARATOR . 'cert' . DIRECTORY_SEPARATOR . $config['service']['privatekey']))
+			if (!file_exists(JPATH_SPIDPHP_SIMPLESAMLPHP . DIRECTORY_SEPARATOR . 'cert' . DIRECTORY_SEPARATOR . $config['service']['privatekey']))
 			{
 				if ($this->params->get('debug', 0))
 				{
