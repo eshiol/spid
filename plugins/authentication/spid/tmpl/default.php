@@ -57,7 +57,7 @@ HTMLHelper::_('bootstrap.tooltip');
 				<label for="spidlevel"><?php echo Text::_('PLG_AUTHENTICATION_SPID_SPIDLEVEL_SELECT'); ?></label>
 			</div>
 			<div class="controls">
-				<?php if (! $production) : ?>
+				<?php if (!$production) : ?>
 					<?php echo HTMLHelper::_('select.genericlist', $options, 'spidlevel',
 						['class' => 'inputbox',
 						'onchange' => 'jQuery(\'#spid-idp-button-medium-post-container\').find(\'.icon.spid-spidl1,.icon.spid-spidl2,.icon.spid-spidl3\').removeClass(\'spid-spidl1\').removeClass(\'spid-spidl2\').removeClass(\'spid-spidl3\').addClass(\'spid-spidl\' + this.value)'
