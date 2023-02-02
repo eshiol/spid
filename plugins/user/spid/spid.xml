@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<extension version="3.0" type="plugin" group="user" method="upgrade">
+<extension type="plugin" group="user" method="upgrade">
 	<name>plg_user_spid</name>
 	<author>Helios Ciancio</author>
 	<creationDate>__DEPLOY_DATE__</creationDate>
-	<copyright>(C) 2017 - 2022 Helios Ciancio. All rights reserved.</copyright>
+	<copyright>(C) 2017 - 2023 Helios Ciancio. All rights reserved.</copyright>
 	<license>http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3</license>
 	<authorEmail>info@eshiol.it</authorEmail>
 	<authorUrl>www.eshiol.it</authorUrl>
@@ -21,6 +21,16 @@
 	</languages>
 	<config>
 		<fields name="params">
+			<fieldset name="basic">
+				<field
+					name="new_usertype"
+					type="usergrouplist"
+					label="PLG_USER_SPID_CONFIG_FIELD_NEW_USER_TYPE_LABEL"
+					description="PLG_USER_SPID_CONFIG_FIELD_NEW_USER_TYPE_DESC"
+					default="2"
+					checksuperusergroup="1"
+				/>
+			</fieldset>
 			<fieldset name="advanced">
 				<field
 					name="debug"
