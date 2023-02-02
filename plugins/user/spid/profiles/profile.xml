@@ -1,7 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+/**
+ * @package     Joomla.Plugins
+ * @subpackage  User.SPiD
+ *
+ * @version     __DEPLOY_VERSION__
+ * @since       3.7
+ *
+ * @author      Helios Ciancio <info (at) eshiol (dot) it>
+ * @link        https://www.eshiol.it
+ * @copyright   Copyright (C) 2017 - 2023 Helios Ciancio. All rights reserved
+ * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
+ * Joomla.Plugins.User.SPiD  is  free  software.  This  version may have been 
+ * modified pursuant to the GNU General Public License, and as distributed it
+ * includes or is derivative of works licensed under the GNU  General  Public 
+ * License or other free or open source software licenses.
+ */
+-->
 <form>
 	<fields name="profile">
-		<fieldset name="profile" label="PLG_USER_SPID_SLIDER_LABEL">
+		<fieldset name="profile">
+			<field
+				name="spidData"
+				type="spacer"
+				label="PLG_USER_SPID_SLIDER_LABEL"
+				class="text"
+			/>
+
 			<field
 				name="spid"
 				type="hidden"
@@ -15,7 +40,7 @@
 				description="PLG_USER_SPID_FIELD_SPIDCODE_DESC"
 				label="PLG_USER_SPID_FIELD_SPIDCODE_LABEL"
 				default="" />
-
+<!--
 			<field
 				name="name"
 				type="text"
@@ -166,7 +191,7 @@
 				description="PLG_USER_SPID_FIELD_DOMICILENATION_DESC"
 				label="PLG_USER_SPID_FIELD_DOMICILENATION_LABEL"
 				default="" />
-
+-->
 			<field
 				name="loa"
 				type="list"

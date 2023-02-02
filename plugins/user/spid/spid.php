@@ -8,17 +8,18 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2017 - 2022 Helios Ciancio. All rights reserved
+ * @copyright   Copyright (C) 2017 - 2023 Helios Ciancio. All rights reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
- * SPiD  for  Joomla!  is  free software. This version may have been modified
- * pursuant to the GNU General Public License, and as distributed it includes
- * or is derivative of works licensed under the GNU General Public License or
- * other free or open source software licenses.
+ * Joomla.Plugins.User.SPiD  is  free  software.  This  version may have been 
+ * modified pursuant to the GNU General Public License, and as distributed it
+ * includes or is derivative of works licensed under the GNU  General  Public 
+ * License or other free or open source software licenses.
  */
 
 defined('_JEXEC') or die;
 
 use eshiol\SPiD\SPiD;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\LibraryHelper;
@@ -227,6 +228,14 @@ class plgUserSpid extends CMSPlugin
 		{
 			$userId = isset($data->id) ? $data->id : 0;
 
+			if ($userId == 0)
+			{
+				// Read the default user group option from com_users
+				$uParams = ComponentHelper::getParams('com_users');
+				$defaultUserGroup = $this->params->get('new_usertype', $uParams->get('new_usertype', $uParams->get('guest_usergroup', 1)));
+				Log::add(new LogEntry('defaultUserGroup: ' . $defaultUserGroup, Log::DEBUG, 'plg_user_spid'));
+				$data->groups = array($defaultUserGroup);
+			}
 			if (!isset($data->profile) and $userId > 0)
 			{
 				// Load the profile data from the database.
@@ -277,12 +286,11 @@ class plgUserSpid extends CMSPlugin
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user_spid'));
 		Log::add(new LogEntry(print_r($data, true), Log::DEBUG, 'plg_user_spid'));
 
-		/**
-		 if ($this->app->isSite())
-		 {
-		 return;
-		 }
-		 */
+		if (!$this->app->isClient('administrator'))
+		{
+			return true;
+		}
+
 		if (!($form instanceof Form))
 		{
 			$this->_subject->setError('JERROR_NOT_A_FORM');
@@ -301,49 +309,6 @@ class plgUserSpid extends CMSPlugin
 		// Add the registration fields to the form.
 		Form::addFormPath(__DIR__ . '/profiles');
 		$form->loadFile('profile', false);
-
-		if (!$this->app->isClient('administrator'))
-		{
-			$form->removeField('loa', 'profile');
-		}
-
-		$profile = array();
-		if (is_array($data) && key_exists('profile', $data))
-		{
-			$profile = $data['id'];
-		}
-		if (is_object($data) && isset($data->id))
-		{
-			$profile = $data->profile;
-		}
-
-		include JPATH_SPIDPHP_SIMPLESAMLPHP . '/config/authsources.php';
-		foreach (self::$fields as $field)
-		{
-			if (!in_array($field, $config['service']['attributes']))
-			{
-				$form->removeField($field, 'profile');
-			}
-		}
-
-		if (!$this->app->isClient('administrator'))
-		{
-			if (isset($profile['spid']) && $profile['spid'])
-			{
-				foreach (self::$fields as $field)
-				{
-					$form->setFieldAttribute($field, 'readonly', 'readonly', 'profile');
-				}
-			}
-		}
-
-		// Drop the profile form entirely if there aren't any fields to display.
-		$remainingfields = $form->getGroup('profile');
-
-		if (!count($remainingfields))
-		{
-			$form->removeGroup('profile');
-		}
 
 		return true;
 	}
@@ -478,6 +443,7 @@ class plgUserSpid extends CMSPlugin
 			$this->app->setUserState('spid.loa', $user['spid']['loa']);
 
 			$user['spid']['spid'] = true;
+			$this->app->setUserState('spid.spid', $user['spid']['spid']);
 
 			try
 			{
