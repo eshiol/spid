@@ -124,6 +124,32 @@ class PlgUserSpid extends CMSPlugin
 		}
 		Log::addLogger(array('logger' => (null !== $this->params->get('logger')) ?$this->params->get('logger') : 'messagequeue', 'extension' => 'plg_user_spid'), JLOG::ALL & ~JLOG::DEBUG, array('plg_user_spid'));
 
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user_spid'));
+
+		if (!$this->checkSPiD())
+		{
+			// Disable all SPiD plugins
+			$db = Factory::getDbo();
+			$query = $db->getQuery(true);
+			$query->update($db->quoteName('#__extensions'))
+				->set($db->quoteName('enabled') . ' = 0')
+				->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+				->where($db->quoteName('element') . ' = ' . $db->quote('spid'));
+			JLog::add(new JLogEntry($query, JLog::DEBUG, 'plg_authentication_spid'));
+			$db->setQuery($query)->execute();
+
+			// Disable all SPiD Login modules
+			$query->clear()
+				->update($db->quoteName('#__extensions'))
+				->set($db->quoteName('enabled') . ' = 0')
+				->where($db->quoteName('type') . ' = ' . $db->quote('module'))
+				->where($db->quoteName('element') . ' = ' . $db->quote('mod_login_spid'));
+			JLog::add(new JLogEntry($query, JLog::DEBUG, 'plg_authentication_spid'));
+			$db->setQuery($query)->execute();
+
+			return;
+		}
+		
 		// Load the authentication source from the session.
 		$this->authsource = $this->app->getUserState('spid.authsource');
 	}

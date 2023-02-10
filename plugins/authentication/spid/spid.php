@@ -53,7 +53,7 @@ if (file_exists(JPATH_SPIDPHP . '/spid-php.php'))
 }*/
 jimport('eshiol.SPiD.SPiD');
 
-class plgAuthenticationSpid extends CMSPlugin
+class PlgAuthenticationSpid extends CMSPlugin
 {
 	/**
 	 * Application object.
@@ -124,7 +124,16 @@ class plgAuthenticationSpid extends CMSPlugin
 			$query->update($db->quoteName('#__extensions'))
 				->set($db->quoteName('enabled') . ' = 0')
 				->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
-				->where($db->quoteName('folder') . ' = ' . $db->quote('spid'));
+				->where($db->quoteName('element') . ' = ' . $db->quote('spid'));
+			JLog::add(new JLogEntry($query, JLog::DEBUG, 'plg_authentication_spid'));
+			$db->setQuery($query)->execute();
+
+			// Disable all SPiD Login modules
+			$query->clear()
+				->update($db->quoteName('#__extensions'))
+				->set($db->quoteName('enabled') . ' = 0')
+				->where($db->quoteName('type') . ' = ' . $db->quote('module'))
+				->where($db->quoteName('element') . ' = ' . $db->quote('mod_login_spid'));
 			JLog::add(new JLogEntry($query, JLog::DEBUG, 'plg_authentication_spid'));
 			$db->setQuery($query)->execute();
 
