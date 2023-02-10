@@ -1,6 +1,6 @@
 <?php
 /**
- * @package     Joomla.Plugins
+ * @package     Joomla.Plugin
  * @subpackage  Authentication.SPiD
  *
  * @version     __DEPLOY_VERSION__
@@ -8,12 +8,12 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2017 - 2022 Helios Ciancio. All rights reserved
+ * @copyright   Copyright (C) 2017 - 2023 Helios Ciancio.  All rights reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
- * SPiD  for  Joomla!  is  free software. This version may have been modified
- * pursuant to the GNU General Public License, and as distributed it includes
- * or is derivative of works licensed under the GNU General Public License or
- * other free or open source software licenses.
+ * Joomla.Plugin.Authentication.SPiD  is  free software.  This version may have
+ * been modified pursuant to the GNU General Public License, and as distributed
+ * it  includes or is derivative of works licensed under the GNU General Public 
+ * License or other free or open source software licenses.
  */
 
 defined('_JEXEC') or die;
@@ -216,6 +216,7 @@ class plgAuthenticationSpid extends CMSPlugin
 			if ($this->params->get('removeTINPrefix', true) && (($i = strpos($attributes['fiscalNumber'][0], '-')) !== false))
 			{
 				$username = substr($attributes['fiscalNumber'][0], $i + 1);
+				$attributes['fiscalNumber'][0] = $username;
 			}
 			else
 			{
@@ -356,8 +357,8 @@ class plgAuthenticationSpid extends CMSPlugin
 					}
 				}
 
-				$uparams = ComponentHelper::getParams('com_users');
-				if ($this->params->get('allowUserRegistration', $uparams->get('allowUserRegistration')))
+				$uParams = ComponentHelper::getParams('com_users');
+				if ($this->params->get('allowUserRegistration', $uParams->get('allowUserRegistration')))
 				{
 					// user data
 					$data['name']     = $spid_response['name'] . ' ' . $spid_response['familyName'];
@@ -494,6 +495,9 @@ class plgAuthenticationSpid extends CMSPlugin
 			{
 				Log::add(new LogEntry('Authenticating '.$_REQUEST['idp'].'...', Log::DEBUG, 'plg_authentication_spid'));
 				$spidsdk->login($_REQUEST['idp'], $loa);
+				/*$return = base64_decode(Factory::getApplication()->input->get('return', null, 'base64'));
+				Log::add(new LogEntry("return " . $return, Log::DEBUG, 'plg_authentication_spid'));
+				$spidsdk->login($_REQUEST['idp'], $loa, $return);*/
 			}
 		}
 

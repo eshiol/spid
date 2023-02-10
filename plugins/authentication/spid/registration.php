@@ -1,6 +1,6 @@
 <?php
 /**
- * @package     Joomla.Plugins
+ * @package     Joomla.Plugin
  * @subpackage  Authentication.SPiD
  *
  * @version     __DEPLOY_VERSION__
@@ -8,12 +8,12 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2017 - 2022 Helios Ciancio. All rights reserved
+ * @copyright   Copyright (C) 2017 - 2023 Helios Ciancio.  All rights reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
- * SPiD  for  Joomla!  is  free software. This version may have been modified
- * pursuant to the GNU General Public License, and as distributed it includes
- * or is derivative of works licensed under the GNU General Public License or
- * other free or open source software licenses.
+ * Joomla.Plugin.Authentication.SPiD  is  free software.  This version may have
+ * been modified pursuant to the GNU General Public License, and as distributed
+ * it  includes or is derivative of works licensed under the GNU General Public 
+ * License or other free or open source software licenses.
  */
 
 defined('_JEXEC') or die;
@@ -49,12 +49,13 @@ class SpidModelRegistration extends UsersModelRegistration
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_authentication_spid'));
 
-		$params = ComponentHelper::getParams('com_users');
-		$lang = Factory::getLanguage()->load('com_users', JPATH_SITE);
-
-		// Initialise the table with JUser.
-		$user = new User;
-		$data = (array) $this->getData();
+		$uParams         = ComponentHelper::getParams('com_users');
+		$plugin          = PluginHelper::getPlugin('authentication', 'spid');
+		$params          = new Registry($plugin->params);
+		$userActivation  = $params->get('userActivation', $uParams->get('useractivation'));
+		$lang            = Factory::getLanguage()->load('com_users', JPATH_SITE);
+		$user            = new User;
+		$data            = (array) $this->getData();
 
 		// Merge in the registration data.
 		foreach ($temp as $k => $v)
@@ -63,18 +64,20 @@ class SpidModelRegistration extends UsersModelRegistration
 		}
 
 		// Prepare the data for the user object.
-		$data['email'] = PunycodeHelper::emailToPunycode($data['email1']);
+		$data['email']    = PunycodeHelper::emailToPunycode($data['email1']);
 		$data['password'] = $data['password1'];
-		$useractivation = $params->get('useractivation');
 
 		// Check if the user needs to activate their account.
 		if (($useractivation == 1) || ($useractivation == 2))
 		{
 			$data['activation'] = ApplicationHelper::getHash(UserHelper::genRandomPassword());
-			$data['block'] = 1;
+			$data['block']      = 1;
 			// confirm email
 			$data['params']['activate'] = 1;
 		}
+
+		$defaultUserGroup = $params->get('new_usertype', $uParams->get('new_usertype', $uParams->get('guest_usergroup', 1)));
+		$data['groups']   = array($defaultUserGroup);
 
 		Log::add(new LogEntry(print_r($data, true), Log::DEBUG, 'plg_authentication_spid'));
 
@@ -100,22 +103,22 @@ class SpidModelRegistration extends UsersModelRegistration
 		}
 
 		$config = Factory::getConfig();
-		$db = $this->getDbo();
-		$query = $db->getQuery(true);
+		$db     = $this->getDbo();
+		$query  = $db->getQuery(true);
 
 		// Compile the notification mail values.
-		$data = $user->getProperties();
+		$data             = $user->getProperties();
 		$data['fromname'] = $config->get('fromname');
 		$data['mailfrom'] = $config->get('mailfrom');
 		$data['sitename'] = $config->get('sitename');
-		$data['siteurl'] = Uri::root();
+		$data['siteurl']  = Uri::root();
 
 		// Handle account activation/confirmation emails.
 		if ($useractivation == 2)
 		{
 			// Set the link to confirm the user email.
-			$uri = Uri::getInstance();
-			$base = $uri->toString(array('scheme', 'user', 'pass', 'host', 'port'));
+			$uri          = Uri::getInstance();
+			$base         = $uri->toString(array('scheme', 'user', 'pass', 'host', 'port'));
 
 			$emailSubject = Text::sprintf(
 				'COM_USERS_EMAIL_ACCOUNT_DETAILS',
@@ -136,17 +139,17 @@ class SpidModelRegistration extends UsersModelRegistration
 		elseif ($useractivation == 1)
 		{
 			// Set the link to activate the user account.
-			$uri = Uri::getInstance();
-			$base = $uri->toString(array('scheme', 'user', 'pass', 'host', 'port'));
+			$uri              = Uri::getInstance();
+			$base             = $uri->toString(array('scheme', 'user', 'pass', 'host', 'port'));
 			$data['activate'] = $base . Route::_('index.php?option=com_users&task=registration.activate&token=' . $data['activation'], false);
 
-			$emailSubject = Text::sprintf(
+			$emailSubject     = Text::sprintf(
 				'COM_USERS_EMAIL_ACCOUNT_DETAILS',
 				$data['name'],
 				$data['sitename']
 				);
 
-			$emailBody = Text::sprintf(
+			$emailBody        = Text::sprintf(
 				'COM_USERS_EMAIL_REGISTERED_WITH_ACTIVATION_BODY_NOPW',
 				$data['name'],
 				$data['sitename'],
@@ -156,13 +159,13 @@ class SpidModelRegistration extends UsersModelRegistration
 				);
 
 			// Send the registration email.
-			$return = Factory::getMailer()->sendMail($data['mailfrom'], $data['fromname'], $data['email'], $emailSubject, $emailBody);
+			$return           = Factory::getMailer()->sendMail($data['mailfrom'], $data['fromname'], $data['email'], $emailSubject, $emailBody);
 		}
 		else
 		{
 			$plugin     = PluginHelper::getPlugin('authentication', 'spid');
 			$spidParams = new Registry($plugin->params);
-		
+
 			if ($spidParams->get('mailToUser', 1))
 			{
 				$emailSubject = Text::sprintf(
@@ -171,7 +174,7 @@ class SpidModelRegistration extends UsersModelRegistration
 					$data['sitename']
 					);
 
-				$emailBody = Text::sprintf(
+				$emailBody    = Text::sprintf(
 					'COM_USERS_EMAIL_REGISTERED_BODY_NOPW',
 					$data['name'],
 					$data['sitename'],
@@ -179,7 +182,7 @@ class SpidModelRegistration extends UsersModelRegistration
 					);
 
 				// Send the registration email.
-				$return = Factory::getMailer()->sendMail($data['mailfrom'], $data['fromname'], $data['email'], $emailSubject, $emailBody);
+				$return       = Factory::getMailer()->sendMail($data['mailfrom'], $data['fromname'], $data['email'], $emailSubject, $emailBody);
 			}
 		}
 
@@ -190,12 +193,12 @@ class SpidModelRegistration extends UsersModelRegistration
 			$uri = Uri::getInstance();
 
 			// Compile the admin notification mail values.
-			$data = $user->getProperties();
+			$data               = $user->getProperties();
 //			$data['activation'] = ApplicationHelper::getHash(UserHelper::genRandomPassword());
 //			$user->set('activation', $data['activation']);
-			$data['siteurl'] = JUri::base();
-			$base = $uri->toString(array('scheme', 'user', 'pass', 'host', 'port'));
-			$data['activate'] = $base . Route::_('index.php?option=com_users&task=registration.activate&token=' . $data['activation'], false);
+			$data['siteurl']    = JUri::base();
+			$base               = $uri->toString(array('scheme', 'user', 'pass', 'host', 'port'));
+			$data['activate']   = $base . Route::_('index.php?option=com_users&task=registration.activate&token=' . $data['activation'], false);
 
 			// Remove administrator/ from activate URL in case this method is called from admin
 			if (Factory::getApplication()->isAdmin())
@@ -208,13 +211,13 @@ class SpidModelRegistration extends UsersModelRegistration
 			$data['mailfrom'] = $config->get('mailfrom');
 			$data['sitename'] = $config->get('sitename');
 			$user->setParam('activate', 1);
-			$emailSubject = Text::sprintf(
+			$emailSubject     = Text::sprintf(
 				'COM_USERS_EMAIL_ACTIVATE_WITH_ADMIN_ACTIVATION_SUBJECT',
 				$data['name'],
 				$data['sitename']
 				);
 
-			$emailBody = Text::sprintf(
+			$emailBody        = Text::sprintf(
 				'PLG_AUTHENTICATION_SPID_EMAIL_ACTIVATE_WITH_ADMIN_ACTIVATION_BODY',
 				$data['sitename'],
 				$data['name'],
@@ -265,9 +268,9 @@ class SpidModelRegistration extends UsersModelRegistration
 			}
 		}
 		// Send Notification mail to administrators
-		elseif (($params->get('useractivation') < 2) && ($params->get('mail_to_admin') == 1))
+		elseif (($useractivation < 2) && ($uParams->get('mail_to_admin') == 1))
 		{
-			$emailSubject = Text::sprintf(
+			$emailSubject   = Text::sprintf(
 				'COM_USERS_EMAIL_ACCOUNT_DETAILS',
 				$data['name'],
 				$data['sitename']

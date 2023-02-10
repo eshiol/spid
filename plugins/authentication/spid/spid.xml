@@ -1,19 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<extension version="3.0" type="plugin" group="authentication" method="upgrade">
+<extension type="plugin" group="authentication" method="upgrade">
 	<name>plg_authentication_spid</name>
 	<author>Helios Ciancio</author>
 	<creationDate>__DEPLOY_DATE__</creationDate>
-	<copyright>(C) 2017 - 2022 Helios Ciancio. All rights reserved.</copyright>
+	<copyright>(C) 2017 - 2023 Helios Ciancio. All rights reserved.</copyright>
 	<license>http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3</license>
 	<authorEmail>info@eshiol.it</authorEmail>
 	<authorUrl>www.eshiol.it</authorUrl>
-	<version>__DEPLOY_VERSION__</version>
+	<version>3.10.5</version>
 	<description>PLG_AUTHENTICATION_SPID_XML_DESCRIPTION</description>
 	<files>
 		<filename plugin="spid">spid.php</filename>
-		<filename>fiscalnumber.php</filename>
 		<filename>registration.php</filename>
-		<folder>tmpl</folder>
 	</files>
 	<media destination="plg_authentication_spid" folder="media">
 		<folder>css</folder>
@@ -116,6 +114,24 @@
 					<option value="1">JYES</option>
 					<option value="0">JNO</option>
 				</field>
+				<field
+					name="useractivation"
+					type="list"
+					label="PLG_AUTHENTICATION_SPID_CONFIG_FIELD_USERACTIVATION_LABEL"
+					description="PLG_AUTHENTICATION_SPID_CONFIG_FIELD_USERACTIVATION_DESC"
+					default="-1"
+					>
+					<option value="-1">JGLOBAL_USE_GLOBAL</option>
+					<option value="0">JNONE</option>
+				</field>
+				<field
+					name="new_usertype"
+					type="usergrouplist"
+					label="PLG_AUTHENTICATION_SPID_CONFIG_FIELD_NEW_USER_TYPE_LABEL"
+					description="PLG_AUTHENTICATION_SPID_CONFIG_FIELD_NEW_USER_TYPE_DESC"
+					default="2"
+					checksuperusergroup="1"
+				/>
 			</fieldset>
 			<fieldset name="advanced">
 				<field
