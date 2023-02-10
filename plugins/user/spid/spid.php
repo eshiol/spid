@@ -1,6 +1,6 @@
 <?php
 /**
- * @package     Joomla.Plugins
+ * @package     Joomla.Plugin
  * @subpackage  User.SPiD
  *
  * @version     __DEPLOY_VERSION__
@@ -8,11 +8,11 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2017 - 2023 Helios Ciancio. All rights reserved
+ * @copyright   Copyright (C) 2017 - 2023 Helios Ciancio. All rights reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
- * Joomla.Plugins.User.SPiD  is  free  software.  This  version may have been 
- * modified pursuant to the GNU General Public License, and as distributed it
- * includes or is derivative of works licensed under the GNU  General  Public 
+ * Joomla.Plugin.User.SPiD  is  free  software.  This  version  may  have been
+ * modified pursuant to the GNU General Public License,  and as distributed it
+ * includes  or  is  derivative of works licensed under the GNU General Public 
  * License or other free or open source software licenses.
  */
 
@@ -21,6 +21,7 @@ defined('_JEXEC') or die;
 use eshiol\SPiD\SPiD;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\LibraryHelper;
 use Joomla\CMS\Log\Log;
@@ -306,9 +307,40 @@ class plgUserSpid extends CMSPlugin
 			return true;
 		}
 
-		// Add the registration fields to the form.
-		Form::addFormPath(__DIR__ . '/profiles');
-		$form->loadFile('profile', false);
+		if ($this->app->isClient('administrator'))
+		{
+			// Add the registration fields to the form.
+			$file = Path::find($form->addFormPath(__DIR__ . '/profiles'), 'profile.xml');
+			$data = file_get_contents($file);
+			if ($this->app->isClient('administrator'))
+			{
+				$re    = '/<fieldset name="(.*)" label="(.*)">/m';
+				$subst = "<fieldset name=\"profile\"><field name=\"$1\" type=\"spacer\" label=\"$2\" class=\"text\"/>";
+				$data  = preg_replace($re, $subst, $data);
+			}
+			$xml  = simplexml_load_string($data);
+			$form->load($xml);
+		}
+		else
+		{
+			if ($this->app->getUserState('spid.spid'))
+			{
+				foreach (self::$fields as $field)
+				{
+					$form->setFieldAttribute($field, 'readonly', 'readonly', 'profile');
+				}
+			}
+		}
+
+		$profile = array();
+		if (is_array($data) && key_exists('profile', $data))
+		{
+			$profile = $data['id'];
+		}
+		if (is_object($data) && isset($data->id))
+		{
+			$profile = $data->profile;
+		}
 
 		return true;
 	}
@@ -440,10 +472,11 @@ class plgUserSpid extends CMSPlugin
 		if (($user['status'] == 1) && ($user['type'] == 'SPiD'))
 		{
 			unset($user['error_message']);
-			$this->app->setUserState('spid.loa', $user['spid']['loa']);
-
 			$user['spid']['spid'] = true;
 			$this->app->setUserState('spid.spid', $user['spid']['spid']);
+
+			$this->app->setUserState('spid.spid', $user['spid']['spid']);
+			$this->app->setUserState('spid.loa', $user['spid']['loa']);
 
 			try
 			{
@@ -460,44 +493,28 @@ class plgUserSpid extends CMSPlugin
 					$profiles[] = $db->quote('profile.' . $k);
 				}
 
-				// TODO: update profile
-				$query = $db->getQuery(true)
-					->delete($db->quoteName('#__user_profiles'))
-					->where($db->quoteName('user_id') . ' = ' . $userId)
-					->where($db->quoteName('profile_key') . ' IN (' . implode(',', $profiles) . ')');
-				Log::add(new LogEntry($query, Log::DEBUG, 'plg_user_spid'));
-				$db->setQuery($query);
-				$db->execute();
-
-				$query = $db->getQuery(true)
-					->select('MAX(ordering) as ' . $db->quoteName('max'))
-					->from('#__user_profiles')
-					->where($db->quoteName('user_id') . ' = ' . $userId)
-					->where($db->quoteName('profile_key') . ' LIKE ' . $db->quote('profile.%'));
-				Log::add(new LogEntry($query, Log::DEBUG, 'plg_user_spid'));
-				$db->setQuery($query);
-				$order = (int) $db->loadResult('max', 0) + 1;
-
+				$order = 0;
 				$tuples = array();
 				foreach ($keys as $k)
 				{
 					if (isset($user['spid'][$k]))
 					{
-						$tuples[] = '(' . $userId . ', ' . $db->quote('profile.' . $k) . ', ' . $db->quote(json_encode($user['spid'][$k])) . ', ' . $order++ . ')';
+						$tuple = $userId . ', ' . $db->quote('profile.' . $k) . ', ' . $db->quote(json_encode($user['spid'][$k])) . ', ' . $order++;
+						Log::add(new LogEntry($tuple, Log::DEBUG, 'plg_user_spid'));
+						$tuples[] = $tuple;
 					}
 				}
 
-				$query = 'INSERT INTO #__user_profiles VALUES ' . implode(', ', $tuples);
+				$query = 'REPLACE INTO #__user_profiles VALUES (' . implode('), (', $tuples) . ')';
 				Log::add(new LogEntry($query, Log::DEBUG, 'plg_user_spid'));
 				$db->setQuery($query);
 				$db->execute();
 			}
 			catch (RuntimeException $e)
 			{
-				$this->_subject->setError($e->getMessage());
+				Log::add(new LogEntry($e->getMessage(), Log::DEBUG, 'plg_user_spid'));
 				return false;
 			}
-
 		}
 
 		return true;
