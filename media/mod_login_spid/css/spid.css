@@ -1,0 +1,16 @@
+@charset "UTF-8";
+.italia-it-button-icon .icon {
+	font-size: xx-large;
+}
+.spid-agid {
+	display: block;
+	margin-top: 1rem;
+	max-width: 214px;
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+	.spid-agid {
+		max-width: 259px;
+	}
+}
