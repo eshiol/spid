@@ -3,7 +3,7 @@
  * @package     Joomla.Plugin
  * @subpackage  User.SPiD
  *
- * @version     __DEPLOY_VERSION__
+ * @version     3.10.6
  * @since       3.7
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
@@ -49,7 +49,7 @@ if (file_exists(JPATH_SPIDPHP . '/spid-php.php'))
 }*/
 jimport('eshiol.SPiD.SPiD');
 
-class plgUserSpid extends CMSPlugin
+class PlgUserSpid extends CMSPlugin
 {
 	/**
 	 * Application object.
@@ -321,15 +321,19 @@ class plgUserSpid extends CMSPlugin
 			$profile = array();
 			if (is_array($data) && key_exists('profile', $data))
 			{
-				$profile = $data['id'];
+				$profile = $data['profile'];
 			}
 			if (is_object($data) && isset($data->id))
 			{
 				$profile = $data->profile;
 			}
-
 			if ($this->app->getUserState('spid.spid'))
 			{
+				if (in_array($name, array('com_users.profile', 'com_users.registration')))
+				{
+					$form->removeField('password1');
+					$form->removeField('password2');
+				}
 				foreach (self::$fields as $field)
 				{
 					if (!empty($profile[$field]))
