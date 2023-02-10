@@ -48,7 +48,7 @@ jimport('eshiol.SPiD.SPiD');
 /**
  * System SPiD Plugin.
  */
-class plgSystemSpid extends CMSPlugin
+class PlgSystemSpid extends CMSPlugin
 {
 
 	/**
