@@ -287,11 +287,6 @@ class plgUserSpid extends CMSPlugin
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user_spid'));
 		Log::add(new LogEntry(print_r($data, true), Log::DEBUG, 'plg_user_spid'));
 
-		if (!$this->app->isClient('administrator'))
-		{
-			return true;
-		}
-
 		if (!($form instanceof Form))
 		{
 			$this->_subject->setError('JERROR_NOT_A_FORM');
@@ -323,23 +318,26 @@ class plgUserSpid extends CMSPlugin
 		}
 		else
 		{
+			$profile = array();
+			if (is_array($data) && key_exists('profile', $data))
+			{
+				$profile = $data['id'];
+			}
+			if (is_object($data) && isset($data->id))
+			{
+				$profile = $data->profile;
+			}
+
 			if ($this->app->getUserState('spid.spid'))
 			{
 				foreach (self::$fields as $field)
 				{
-					$form->setFieldAttribute($field, 'readonly', 'readonly', 'profile');
+					if (!empty($profile[$field]))
+					{
+						$form->setFieldAttribute($field, 'readonly', 'readonly', 'profile');
+					}
 				}
 			}
-		}
-
-		$profile = array();
-		if (is_array($data) && key_exists('profile', $data))
-		{
-			$profile = $data['id'];
-		}
-		if (is_object($data) && isset($data->id))
-		{
-			$profile = $data->profile;
 		}
 
 		return true;
@@ -473,9 +471,7 @@ class plgUserSpid extends CMSPlugin
 		{
 			unset($user['error_message']);
 			$user['spid']['spid'] = true;
-			$this->app->setUserState('spid.spid', $user['spid']['spid']);
-
-			$this->app->setUserState('spid.spid', $user['spid']['spid']);
+			$this->app->setUserState('spid.spid', true);
 			$this->app->setUserState('spid.loa', $user['spid']['loa']);
 
 			try
