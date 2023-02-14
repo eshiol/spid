@@ -353,6 +353,7 @@ class PlgUserSpid extends CMSPlugin
 			{
 				$profile = $data->profile;
 			}
+			Log::add(new LogEntry('spid.spid: ' . $this->app->getUserState('spid.spid'), Log::DEBUG, 'plg_user_spid'));
 			if ($this->app->getUserState('spid.spid'))
 			{
 				if (in_array($name, array('com_users.profile', 'com_users.registration')))
@@ -427,6 +428,20 @@ class PlgUserSpid extends CMSPlugin
 			{
 				$this->_subject->setError($e->getMessage());
 				return false;
+			}
+
+			$uParams = JComponentHelper::getParams('com_users');
+			$userActivation = $this->params->get('userActivation', $uParams->get('useractivation'));
+			if ($userActivation == 0)
+			{
+				$this->app->login(
+					['username' => '', 'password'  => ''],
+					['remember' => false]
+				);
+
+				$return = base64_decode($this->app->input->getInputForRequestMethod()->get('return', '', 'BASE64'));
+
+				$this->app->redirect(JRoute::_($return, false));
 			}
 		}
 
