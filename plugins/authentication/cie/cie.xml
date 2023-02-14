@@ -2,16 +2,15 @@
 <extension type="plugin" group="authentication" method="upgrade">
 	<name>plg_authentication_cie</name>
 	<author>Helios Ciancio</author>
-	<creationDate>04 December 2022</creationDate>
-	<copyright>(C) 2022 Helios Ciancio. All rights reserved.</copyright>
+	<creationDate>__DEPLOY_DATE__</creationDate>
+	<copyright>(C) 2022 - 2023 Helios Ciancio. All rights reserved.</copyright>
 	<license>http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3</license>
 	<authorEmail>info@eshiol.it</authorEmail>
 	<authorUrl>www.eshiol.it</authorUrl>
-	<version>3.10.0.4</version>
+	<version>3.10.1</version>
 	<description>PLG_AUTHENTICATION_CIE_XML_DESCRIPTION</description>
 	<files>
 		<filename plugin="cie">cie.php</filename>
-		<folder>tmpl</folder>
 	</files>
 	<languages folder="language">
 		<language tag="en-GB">en-GB/en-GB.plg_authentication_cie.ini</language>
@@ -19,10 +18,6 @@
 		<language tag="it-IT">it-IT/it-IT.plg_authentication_cie.ini</language>
 		<language tag="it-IT">it-IT/it-IT.plg_authentication_cie.sys.ini</language>
 	</languages>
-	<media destination="plg_authentication_cie" folder="media">
-		<folder>css</folder>
-		<folder>images</folder>
-	</media>
 	<config>
 		<fields name="params">
 			<fieldset name="advanced">

@@ -8,7 +8,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2022 Helios Ciancio. All rights reserved
+ * @copyright   Copyright (C) 2022 - 2023 Helios Ciancio. All rights reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * SPiD  for  Joomla!  is  free software. This version may have been modified
  * pursuant to the GNU General Public License, and as distributed it includes
@@ -209,26 +209,4 @@ class plgAuthenticationCie extends CMSPlugin
 		return true;
 	}
 
-	/**
-	 * Textfield or Form of the Plugin.
-	 *
-	 * @return  array  Returns an array with the tab information
-	 *
-	 * @since   3.10.0
-	 */
-	public function onAuthenticationAddLoginTab()
-	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_authentication_cie'));
-
-		$tab            = array();
-		$tab['name']    = 'cie';
-		$tab['label']   = Text::_('PLG_AUTHENTICATION_CIE_LOGIN');
-
-		// Render the input
-		ob_start();
-		include PluginHelper::getLayoutPath('authentication', 'cie');
-		$tab['content'] = ob_get_clean();
-
-		return $tab;
-	}
 }
