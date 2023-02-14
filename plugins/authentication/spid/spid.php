@@ -514,34 +514,6 @@ class PlgAuthenticationSpid extends CMSPlugin
 	}
 
 	/**
-	 * Textfield or Form of the Plugin.
-	 *
-	 * @return  array  Returns an array with the tab information
-	 *
-	 * @since   3.10.0
-	 */
-	public function onAuthenticationAddLoginTab()
-	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_authentication_spid'));
-
-		if (!$this->checkSPiD())
-		{
-			return;
-		}
-
-		$tab            = array();
-		$tab['name']    = 'spid';
-		$tab['label']   = Text::_('PLG_AUTHENTICATION_SPID_LOGIN');
-
-		// Render the input
-		ob_start();
-		include PluginHelper::getLayoutPath('authentication', 'spid');
-		$tab['content'] = ob_get_clean();
-
-		return $tab;
-	}
-
-	/**
 	 * @param   integer		$userid		The user id
 	 * @param	string		$key		The profile key
 	 * @param	string		$default	The default value
