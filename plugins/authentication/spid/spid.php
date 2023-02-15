@@ -71,6 +71,13 @@ class PlgAuthenticationSpid extends CMSPlugin
 	protected $autoloadLanguage = true;
 
 	/**
+	 * Database object
+	 *
+	 * @var    JDatabaseDriver
+	 */
+	protected $db;
+
+	/**
 	 * SPiD attributes
 	 *
 	 * @var array
@@ -119,23 +126,22 @@ class PlgAuthenticationSpid extends CMSPlugin
 		if (!$this->checkSPiD())
 		{
 			// Disable all SPiD plugins
-			$db = Factory::getDbo();
-			$query = $db->getQuery(true);
-			$query->update($db->quoteName('#__extensions'))
-				->set($db->quoteName('enabled') . ' = 0')
-				->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
-				->where($db->quoteName('element') . ' = ' . $db->quote('spid'));
-			JLog::add(new JLogEntry($query, JLog::DEBUG, 'plg_authentication_spid'));
-			$db->setQuery($query)->execute();
+			$query = $this->db->getQuery(true);
+			$query->update($this->db->quoteName('#__extensions'))
+				->set($this->db->quoteName('enabled') . ' = 0')
+				->where($this->db->quoteName('type') . ' = ' . $this->db->quote('plugin'))
+				->where($this->db->quoteName('element') . ' = ' . $this->db->quote('spid'));
+			Log::add(new LogEntry($query, Log::DEBUG, 'plg_authentication_spid'));
+			$this->db->setQuery($query)->execute();
 
 			// Disable all SPiD Login modules
 			$query->clear()
-				->update($db->quoteName('#__extensions'))
-				->set($db->quoteName('enabled') . ' = 0')
-				->where($db->quoteName('type') . ' = ' . $db->quote('module'))
-				->where($db->quoteName('element') . ' = ' . $db->quote('mod_login_spid'));
-			JLog::add(new JLogEntry($query, JLog::DEBUG, 'plg_authentication_spid'));
-			$db->setQuery($query)->execute();
+				->update($this->db->quoteName('#__extensions'))
+				->set($this->db->quoteName('enabled') . ' = 0')
+				->where($this->db->quoteName('type') . ' = ' . $this->db->quote('module'))
+				->where($this->db->quoteName('element') . ' = ' . $this->db->quote('mod_login_spid'));
+			Log::add(new LogEntry($query, Log::DEBUG, 'plg_authentication_spid'));
+			$this->db->setQuery($query)->execute();
 
 			return;
 		}
@@ -286,17 +292,16 @@ class PlgAuthenticationSpid extends CMSPlugin
 				if ($allowEmailAuthentication = $this->params->get('allowEmailAuthentication', false))
 				{
 					// Get the database object and a new query object.
-					$db = Factory::getDbo();
-					$query = $db->getQuery(true);
+					$query = $this->db->getQuery(true);
 
 					// Build the query.
 					$query->select('username')
 						->from('#__users')
-						->where('email = ' . $db->quote(PunycodeHelper::emailToPunycode($spid_response['email'])));
+						->where('email = ' . $this->db->quote(PunycodeHelper::emailToPunycode($spid_response['email'])));
 
 					// Set and query the database.
-					$db->setQuery($query);
-					$usernameByEmail = $db->loadResult();
+					$this->db->setQuery($query);
+					$usernameByEmail = $this->db->loadResult();
 
 					if ($usernameByEmail)
 					{
@@ -304,19 +309,19 @@ class PlgAuthenticationSpid extends CMSPlugin
 
 						if ($allowEmailAuthentication == 2)
 						{
-							$query = $db->getQuery(true);
+							$query = $this->db->getQuery(true);
 
 							// Build the query.
 							$query->update('#__users')
-								->set('username = ' . $db->quote($username))
-								->where('email = ' . $db->quote(PunycodeHelper::emailToPunycode($spid_response['email'])));
+								->set('username = ' . $this->db->quote($username))
+								->where('email = ' . $this->db->quote(PunycodeHelper::emailToPunycode($spid_response['email'])));
 
 							// Set and query the database.
-							$db->setQuery($query);
+							$this->db->setQuery($query);
 
 							try
 							{
-								$db->execute();
+								$this->db->execute();
 								$usernameByEmail = $username;
 								$this->app->enqueueMessage(Text::sprintf('PLG_AUTHENTICATION_SPID_PROFILE_UPDATE_SUCCESS', Text::_('JGLOBAL_USERNAME'),	$username), 'notice');
 							}
@@ -369,6 +374,8 @@ class PlgAuthenticationSpid extends CMSPlugin
 				$uParams = ComponentHelper::getParams('com_users');
 				if ($this->params->get('allowUserRegistration', $uParams->get('allowUserRegistration')))
 				{
+					unset($response->error_message);
+					
 					// user data
 					$data['name']     = $spid_response['name'] . ' ' . $spid_response['familyName'];
 					$data['username'] = $username;
@@ -397,17 +404,16 @@ class PlgAuthenticationSpid extends CMSPlugin
 						$response->status = Authentication::STATUS_FAILURE;
 
 						// Get the database object and a new query object.
-						$db = Factory::getDbo();
-						$query = $db->getQuery(true);
+						$query = $this->db->getQuery(true);
 
 						// Build the query.
 						$query->select('COUNT(*)')
 							->from('#__users')
-							->where('email = ' . $db->quote($data['email']));
+							->where('email = ' . $this->db->quote($data['email']));
 
 						// Set and query the database.
-						$db->setQuery($query);
-						$duplicate = (bool) $db->loadResult();
+						$this->db->setQuery($query);
+						$duplicate = (bool) $this->db->loadResult();
 
 						$response->message = ($duplicate ? Text::_('PLG_AUTHENTICATION_SPID_REGISTER_EMAIL1_MESSAGE') : 'USER NOT EXISTS AND FAILED THE CREATION PROCESS');
 
@@ -526,14 +532,13 @@ class PlgAuthenticationSpid extends CMSPlugin
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_authentication_spid'));
 
-		$db = JFactory::getDbo();
-		$query = $db->getQuery(true)
-			->select($db->quoteName('profile_value'))
-			->from($db->quoteName('#__user_profiles'))
-			->where($db->quoteName('user_id') . ' = ' . (int)$userid)
-			->where($db->quoteName('profile_key') . ' = ' . $db->quote('profile.' . $key));
-		$db->setQuery($query);
-		$value = json_decode($db->LoadResult());
+		$query = $this->db->getQuery(true)
+			->select($this->db->quoteName('profile_value'))
+			->from($this->db->quoteName('#__user_profiles'))
+			->where($this->db->quoteName('user_id') . ' = ' . (int)$userid)
+			->where($this->db->quoteName('profile_key') . ' = ' . $this->db->quote('profile.' . $key));
+		$this->db->setQuery($query);
+		$value = json_decode($this->db->LoadResult());
 
 		return $value ?: $default;
 	}
