@@ -1,7 +1,7 @@
 <?php
 /**
- * @package     Joomla.Plugins
- * @subpackage  Authentication.CIE
+ * @package     Joomla.Plugin
+ * @subpackage  Authentication.CiE
  *
  * @version     __DEPLOY_VERSION__
  * @since       3.10
@@ -10,7 +10,7 @@
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2022 - 2023 Helios Ciancio.  All rights reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
- * Joomla.Plugins.Authentication.CIE  is  free  software. This version may have
+ * Joomla.Plugin.Authentication.CiE  is  free  software.  This version may have
  * been modified pursuant to the GNU General Public License, and as distributed
  * it includes or is derivative of works licensed under the GNU  General Public
  * License or other free or open source software licenses.

@@ -4,12 +4,12 @@
 	<libraryname>eshiol/SPiD</libraryname>
 	<description>SPiD Library.</description>
 	<author>Helios Ciancio</author>
-	<authorEmail>info (at) eshiol (dot) it</authorEmail>
+	<authorEmail>info@eshiol.it</authorEmail>
 	<authorUrl>www.eshiol.it</authorUrl>
 	<creationDate>__DEPLOY_DATE__</creationDate>
-	<copyright><![CDATA[(C) 2022 Helios Ciancio. All Rights Reserved.]]></copyright>
+	<copyright><![CDATA[(C) 2022 - 2023 Helios Ciancio. All Rights Reserved.]]></copyright>
 	<license>http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3</license>
-	<version>__DEPLOY_VERSION__</version>
+	<version>3.10.2</version>
 	<files>
     	<filename>SPiD.php</filename>
     	<filename>CiE.php</filename>

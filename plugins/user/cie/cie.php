@@ -1,6 +1,6 @@
 <?php
 /**
- * @package     Joomla.Plugins
+ * @package     Joomla.Plugin
  * @subpackage  User.CiE
  *
  * @version     __DEPLOY_VERSION__
@@ -10,7 +10,7 @@
  * @link        https://www.eshiol.it
  * @copyright   Copyright (C) 2022 - 2023 Helios Ciancio. All rights reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
- * Joomla.Plugins.User.CiE  is  free  software.  This  version  may have been
+ * Joomla.Plugin.User.CiE  is  free  software.  This  version  may  have been
  * modified pursuant to the GNU General Public License, and as distributed it
  * includes or is derivative of works licensed under the GNU  General  Public 
  * License or other free or open source software licenses.

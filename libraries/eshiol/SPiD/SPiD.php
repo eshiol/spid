@@ -8,7 +8,7 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2022 Helios Ciancio. All rights reserved
+ * @copyright   Copyright (C) 2022 - 2023 Helios Ciancio. All rights reserved
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
  * SPiD for  Joomla!  is  free software.  This version may have been modified
  * pursuant to the GNU General Public License, and as distributed it includes
