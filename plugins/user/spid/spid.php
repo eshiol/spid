@@ -129,23 +129,22 @@ class PlgUserSpid extends CMSPlugin
 		if (!$this->checkSPiD())
 		{
 			// Disable all SPiD plugins
-			$db = Factory::getDbo();
-			$query = $db->getQuery(true);
-			$query->update($db->quoteName('#__extensions'))
-				->set($db->quoteName('enabled') . ' = 0')
-				->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
-				->where($db->quoteName('element') . ' = ' . $db->quote('spid'));
-			JLog::add(new JLogEntry($query, JLog::DEBUG, 'plg_authentication_spid'));
-			$db->setQuery($query)->execute();
+			$query = $this->db->getQuery(true);
+			$query->update($this->db->quoteName('#__extensions'))
+				->set($this->db->quoteName('enabled') . ' = 0')
+				->where($this->db->quoteName('type') . ' = ' . $this->db->quote('plugin'))
+				->where($this->db->quoteName('element') . ' = ' . $this->db->quote('spid'));
+			Log::add(new LogEntry($query, Log::DEBUG, 'plg_authentication_spid'));
+			$this->db->setQuery($query)->execute();
 
 			// Disable all SPiD Login modules
 			$query->clear()
-				->update($db->quoteName('#__extensions'))
-				->set($db->quoteName('enabled') . ' = 0')
-				->where($db->quoteName('type') . ' = ' . $db->quote('module'))
-				->where($db->quoteName('element') . ' = ' . $db->quote('mod_login_spid'));
-			JLog::add(new JLogEntry($query, JLog::DEBUG, 'plg_authentication_spid'));
-			$db->setQuery($query)->execute();
+				->update($this->db->quoteName('#__extensions'))
+				->set($this->db->quoteName('enabled') . ' = 0')
+				->where($this->db->quoteName('type') . ' = ' . $this->db->quote('module'))
+				->where($this->db->quoteName('element') . ' = ' . $this->db->quote('mod_login_spid'));
+			Log::add(new LogEntry($query, Log::DEBUG, 'plg_authentication_spid'));
+			$this->db->setQuery($query)->execute();
 
 			return;
 		}
@@ -189,7 +188,7 @@ class PlgUserSpid extends CMSPlugin
 		{
 			if ($this->params->get('debug', 0))
 			{
-				Log::add(new LogEntry('PLG_USER_SPID_SPIDPHPNOTFOUND', Log::ERROR, 'plg_system_spid'));
+				Log::add(new LogEntry('PLG_USER_SPID_SPIDPHPNOTFOUND', Log::ERROR, 'plg_user_spid'));
 			}
 			return false;
 		}
@@ -197,7 +196,7 @@ class PlgUserSpid extends CMSPlugin
 		{
 			if ($this->params->get('debug', 0))
 			{
-				Log::add(new LogEntry('PLG_USER_SPID_SPIDLIBRARYDISABLED', Log::ERROR, 'plg_system_spid'));
+				Log::add(new LogEntry('PLG_USER_SPID_SPIDLIBRARYDISABLED', Log::ERROR, 'plg_user_spid'));
 			}
 			return false;
 		}
@@ -266,15 +265,14 @@ class PlgUserSpid extends CMSPlugin
 			if (!isset($data->profile) and $userId > 0)
 			{
 				// Load the profile data from the database.
-				$db = Factory::getDbo();
-				$db->setQuery(
+				$this->db->setQuery(
 					'SELECT profile_key, profile_value FROM #__user_profiles' .
 					' WHERE user_id = ' . (int) $userId . " AND profile_key LIKE 'profile.%'" .
 					' ORDER BY ordering');
 
 				try
 				{
-					$results = $db->loadRowList();
+					$results = $this->db->loadRowList();
 				}
 				catch (RuntimeException $e)
 				{
@@ -396,33 +394,31 @@ class PlgUserSpid extends CMSPlugin
 		{
 			try
 			{
-				$db = Factory::getDbo();
-
 				$keys = array_keys($data['profile']);
 
 				foreach ($keys as &$key)
 				{
 					$key = 'profile.' . $key;
-					$key = $db->quote($key);
+					$key = $this->db->quote($key);
 				}
 
-				$query = $db->getQuery(true)
-					->delete($db->quoteName('#__user_profiles'))
-					->where($db->quoteName('user_id') . ' = ' . (int) $userId)
-					->where($db->quoteName('profile_key') . ' IN (' . implode(',', $keys) . ')');
-				$db->setQuery($query);
-				$db->execute();
+				$query = $this->db->getQuery(true)
+					->delete($this->db->quoteName('#__user_profiles'))
+					->where($this->db->quoteName('user_id') . ' = ' . (int) $userId)
+					->where($this->db->quoteName('profile_key') . ' IN (' . implode(',', $keys) . ')');
+				$this->db->setQuery($query);
+				$this->db->execute();
 
 				$tuples = array();
 				$order = 1;
 
 				foreach ($data['profile'] as $k => $v)
 				{
-					$tuples[] = '(' . $userId . ', ' . $db->q('profile.' . $k) . ', ' . $db->q(json_encode($v)) . ', ' . $order++ . ')';
+					$tuples[] = '(' . $userId . ', ' . $this->db->quote('profile.' . $k) . ', ' . $this->db->quote(json_encode($v)) . ', ' . $order++ . ')';
 				}
 
-				$db->setQuery('INSERT INTO #__user_profiles VALUES ' . implode(', ', $tuples));
-				$db->execute();
+				$this->db->setQuery('INSERT INTO #__user_profiles VALUES ' . implode(', ', $tuples));
+				$this->db->execute();
 			}
 			catch (RuntimeException $e)
 			{
@@ -435,8 +431,8 @@ class PlgUserSpid extends CMSPlugin
 			if ($userActivation == 0)
 			{
 				$this->app->login(
-					['username' => '', 'password'  => ''],
-					['remember' => false]
+					['username' => '', 'password' => ''],
+					['remember' => false, 'silent' => true]
 				);
 
 				$return = base64_decode($this->app->input->getInputForRequestMethod()->get('return', '', 'BASE64'));
@@ -476,12 +472,11 @@ class PlgUserSpid extends CMSPlugin
 		{
 			try
 			{
-				$db = Factory::getDbo();
-				$db->setQuery(
+				$this->db->setQuery(
 					'DELETE FROM #__user_profiles WHERE user_id = ' . $userId .
 					" AND profile_key LIKE 'profile.%'");
 
-				$db->execute();
+				$this->db->execute();
 			}
 			catch (Exception $e)
 			{
@@ -523,15 +518,13 @@ class PlgUserSpid extends CMSPlugin
 			{
 				$userId = (int) User::getInstance($user['username'])->id;
 
-				$db = Factory::getDbo();
-
 				$profiles = array();
 				include JPATH_SPIDPHP_SIMPLESAMLPHP . '/config/authsources.php';
 				$keys = $config['service']['attributes'];
 				array_push($keys, "spid");
 				foreach ($keys as $k)
 				{
-					$profiles[] = $db->quote('profile.' . $k);
+					$profiles[] = $this->db->quote('profile.' . $k);
 				}
 
 				$order = 0;
@@ -540,7 +533,7 @@ class PlgUserSpid extends CMSPlugin
 				{
 					if (isset($user['spid'][$k]))
 					{
-						$tuple = $userId . ', ' . $db->quote('profile.' . $k) . ', ' . $db->quote(json_encode($user['spid'][$k])) . ', ' . $order++;
+						$tuple = $userId . ', ' . $this->db->quote('profile.' . $k) . ', ' . $this->db->quote(json_encode($user['spid'][$k])) . ', ' . $order++;
 						Log::add(new LogEntry($tuple, Log::DEBUG, 'plg_user_spid'));
 						$tuples[] = $tuple;
 					}
@@ -548,8 +541,8 @@ class PlgUserSpid extends CMSPlugin
 
 				$query = 'REPLACE INTO #__user_profiles VALUES (' . implode('), (', $tuples) . ')';
 				Log::add(new LogEntry($query, Log::DEBUG, 'plg_user_spid'));
-				$db->setQuery($query);
-				$db->execute();
+				$this->db->setQuery($query);
+				$this->db->execute();
 			}
 			catch (RuntimeException $e)
 			{
