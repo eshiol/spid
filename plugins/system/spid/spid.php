@@ -75,6 +75,13 @@ class PlgSystemSpid extends CMSPlugin
 	protected $autoloadLanguage = true;
 
 	/**
+	 * Database object
+	 *
+	 * @var    JDatabaseDriver
+	 */
+	protected $db;
+
+	/**
 	 * Constructor
 	 *
 	 * @param  object  $subject  The object to observe
@@ -95,23 +102,22 @@ class PlgSystemSpid extends CMSPlugin
 		if (!$this->checkSPiD())
 		{
 			// Disable all SPiD plugins
-			$db = Factory::getDbo();
-			$query = $db->getQuery(true);
-			$query->update($db->quoteName('#__extensions'))
-				->set($db->quoteName('enabled') . ' = 0')
-				->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
-				->where($db->quoteName('element') . ' = ' . $db->quote('spid'));
-			JLog::add(new JLogEntry($query, JLog::DEBUG, 'plg_authentication_spid'));
-			$db->setQuery($query)->execute();
+			$query = $this->db->getQuery(true);
+			$query->update($this->db->quoteName('#__extensions'))
+				->set($this->db->quoteName('enabled') . ' = 0')
+				->where($this->db->quoteName('type') . ' = ' . $this->db->quote('plugin'))
+				->where($this->db->quoteName('element') . ' = ' . $this->db->quote('spid'));
+			Log::add(new LogEntry($query, Log::DEBUG, 'plg_authentication_spid'));
+			$this->db->setQuery($query)->execute();
 
 			// Disable all SPiD Login modules
 			$query->clear()
-				->update($db->quoteName('#__extensions'))
-				->set($db->quoteName('enabled') . ' = 0')
-				->where($db->quoteName('type') . ' = ' . $db->quote('module'))
-				->where($db->quoteName('element') . ' = ' . $db->quote('mod_login_spid'));
-			JLog::add(new JLogEntry($query, JLog::DEBUG, 'plg_authentication_spid'));
-			$db->setQuery($query)->execute();
+				->update($this->db->quoteName('#__extensions'))
+				->set($this->db->quoteName('enabled') . ' = 0')
+				->where($this->db->quoteName('type') . ' = ' . $this->db->quote('module'))
+				->where($this->db->quoteName('element') . ' = ' . $this->db->quote('mod_login_spid'));
+			Log::add(new LogEntry($query, Log::DEBUG, 'plg_authentication_spid'));
+			$this->db->setQuery($query)->execute();
 
 			return;
 		}
