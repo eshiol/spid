@@ -18,9 +18,11 @@
 
 defined('_JEXEC') or die;
 
+use eshiol\ItaliaPA\FiscalNumber\FiscalNumber;
 use eshiol\SPiD\CiE;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Authentication\Authentication;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Helper\LibraryHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
@@ -44,7 +46,7 @@ if (file_exists(JPATH_SPIDPHP . '/spid-php.php'))
 }
 jimport('eshiol.SPiD.CiE');
 
-class plgAuthenticationCie extends CMSPlugin
+class PlgAuthenticationCie extends CMSPlugin
 {
 	/**
 	 * Application object.
@@ -139,30 +141,26 @@ class plgAuthenticationCie extends CMSPlugin
 		if ($spidsdk->isAuthenticated() && isset($_REQUEST['idp']) && $spidsdk->isIdP($_REQUEST['idp']))
 		{
 			Log::add(new LogEntry('User is authenticated', Log::DEBUG, 'plg_authentication_cie'));
+			$this->app->setUserState('cie.cie', true);
 
-		    $authDataArray = $spidsdk->getAuthDataArray();
-		    Log::add(new LogEntry(print_r($authDataArray, true), Log::DEBUG, 'plg_authentication_cie'));
+			$authDataArray = $spidsdk->getAuthDataArray();
+			Log::add(new LogEntry(print_r($authDataArray, true), Log::DEBUG, 'plg_authentication_cie'));
 
-		    if (isset($authDataArray['saml:sp:AuthnContext']))
-		    {
-		        $loa = (int)substr($authDataArray['saml:sp:AuthnContext'], -1);
-		    }
+			foreach($_REQUEST as $attribute=>$value)
+			{
+				Log::add(new LogEntry($attribute . ": " . $value, Log::DEBUG, 'plg_authentication_cie'));
+			}
 
-		    foreach($_REQUEST as $attribute=>$value)
-		    {
-		        Log::add(new LogEntry($attribute . ": " . $value, Log::DEBUG, 'plg_authentication_cie'));
-		    }
+			Log::add(new LogEntry($spidsdk->getIdP(), Log::DEBUG, 'plg_authentication_cie'));
+			Log::add(new LogEntry("Response ID: " . $spidsdk->getResponseID(), Log::DEBUG, 'plg_authentication_cie'));
 
-		    Log::add(new LogEntry($spidsdk->getIdP(), Log::DEBUG, 'plg_authentication_cie'));
-		    Log::add(new LogEntry("Response ID: " . $spidsdk->getResponseID(), Log::DEBUG, 'plg_authentication_cie'));
+			$attributes = $spidsdk->getAttributes();
+			foreach($attributes as $attribute=>$value)
+			{
+				Log::add(new LogEntry($attribute . ": " . $value[0], Log::DEBUG, 'plg_authentication_cie'));
+			}
 
-		    $attributes = $spidsdk->getAttributes();
-		    foreach($attributes as $attribute=>$value)
-		    {
-		    	Log::add(new LogEntry($attribute . ": " . $value[0], Log::DEBUG, 'plg_authentication_cie'));
-		    }
-
-		    $response->type = 'CiE';
+			$response->type = 'CiE';
 
 			if (!isset($attributes['fiscalNumber']))
 			{
@@ -217,15 +215,48 @@ class plgAuthenticationCie extends CMSPlugin
 			}
 			else
 			{
-				// TODO: allowUserRegistration
+				$uParams = ComponentHelper::getParams('com_users');
+				Log::add(new LogEntry('allowUserRegistration: ' . $this->params->get('allowUserRegistration', $uParams->get('allowUserRegistration')), Log::DEBUG, 'plg_authentication_cns'));
+				if ($this->params->get('allowUserRegistration', $uParams->get('allowUserRegistration')))
+				{
+					// user data
+					$data = [
+						'idp'      => 'CiE',
+						'name'     => ucwords($attributes['name'][0]) . ' ' . ucwords($attributes['familyName'][0]),
+						'username' => $username
+					];
 
-				// Invalid user
-				$response->status        = Authentication::STATUS_FAILURE;
-				$response->error_message = Text::_('JGLOBAL_AUTH_NO_USER');
-				Log::add(new LogEntry(Text::_('JGLOBAL_AUTH_NO_USER'), Log::DEBUG, 'plg_authentication_cie'));
-				Log::add(new LogEntry(print_r($response, true), Log::DEBUG, 'plg_authentication_cie'));
-				$spidsdk->logout(null, false);
-				return false;
+					jimport('eshiol.ItaliaPA.FiscalNumber.FiscalNumber');
+					$fiscalNumber = new FiscalNumber($username);
+	
+					$data['profile'] = array();
+					$data['profile']['fiscalNumber'] = $fiscalNumber->getFiscalNumber();
+					$data['profile']['name']         = ucwords($attributes['name'][0]);
+					$data['profile']['familyName']   = ucwords($attributes['familyName'][0]);
+					$data['profile']['gender']       = $fiscalNumber->getGender();
+					$data['profile']['dateOfBirth']  = $fiscalNumber->getBirthDate();
+					$data['profile']['placeOfBirth'] = $fiscalNumber->getBirthPlace();
+		
+					// Save the data in the session.
+					$this->app->setUserState('com_users.registration.data', $data);
+
+					$return = $this->app->input->getInputForRequestMethod()->get('return', '', 'BASE64');
+
+					// Redirect back to the registration screen.
+					$this->app->redirect(JRoute::_('index.php?option=com_users&view=registration&idp=cie&return=' . $return, false));
+
+					return true;
+				}
+				else
+				{
+					// Invalid user
+					$response->status        = Authentication::STATUS_FAILURE;
+					$response->error_message = Text::_('JGLOBAL_AUTH_NO_USER');
+					Log::add(new LogEntry(Text::_('JGLOBAL_AUTH_NO_USER'), Log::DEBUG, 'plg_authentication_cie'));
+					Log::add(new LogEntry(print_r($response, true), Log::DEBUG, 'plg_authentication_cie'));
+					$spidsdk->logout(null, false);
+					return false;
+				}
 			}
 
 			Log::add(new LogEntry(print_r($response, true), Log::DEBUG, 'plg_authentication_cie'));

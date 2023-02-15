@@ -19,13 +19,17 @@
 defined('_JEXEC') or die;
 
 use eshiol\SPiD\CiE;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\LibraryHelper;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Log\LogEntry;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\User\User;
+use Joomla\Registry\Registry;
 
 if (!defined('JPATH_SPIDPHP'))
 {
@@ -45,7 +49,7 @@ if (file_exists(JPATH_SPIDPHP . '/spid-php.php'))
 }*/
 jimport('eshiol.SPiD.CiE');
 
-class plgUserCie extends CMSPlugin
+class PlgUserCie extends CMSPlugin
 {
 	/**
 	 * Application object.
@@ -141,7 +145,7 @@ class plgUserCie extends CMSPlugin
 
 		if ($spidsdk->isAuthenticated())
 		{
-			$spidsdk->logout();
+			$spidsdk->logout(null, false);
 		}
 		return true;
 	}
@@ -188,9 +192,8 @@ class plgUserCie extends CMSPlugin
 			{
 				if ($this->params->get('debug', 0))
 				{
-					Log::add(new LogEntry('plg_user_cie_CERTNOTFOUND', Log::ERROR, 'plg_user_cie'));
+					Log::add(new LogEntry('PLG_USER_CIE_CERTNOTFOUND', Log::ERROR, 'plg_user_cie'));
 				}
-				
 				return false;
 			}
 		}
@@ -207,7 +210,7 @@ class plgUserCie extends CMSPlugin
 	 */
 	public function onContentPrepareData($context, $data)
 	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user _cie'));
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user_cie'));
 
 		// Check we are manipulating a valid form.
 		if (!in_array($context, array('com_users.profile', 'com_users.user', 'com_users.registration', 'com_admin.profile')))
@@ -224,7 +227,7 @@ class plgUserCie extends CMSPlugin
 				// Read the default user group option from com_users
 				$uParams = ComponentHelper::getParams('com_users');
 				$defaultUserGroup = $this->params->get('new_usertype', $uParams->get('new_usertype', $uParams->get('guest_usergroup', 1)));
-				Log::add(new LogEntry('defaultUserGroup: ' . $defaultUserGroup, Log::DEBUG, 'plg_user _cie'));
+				Log::add(new LogEntry('defaultUserGroup: ' . $defaultUserGroup, Log::DEBUG, 'plg_user_cie'));
 				$data->groups = array($defaultUserGroup);
 			}
 			if (!isset($data->profile) and $userId > 0)
@@ -273,8 +276,8 @@ class plgUserCie extends CMSPlugin
 	 */
 	public function onContentPrepareForm($form, $data)
 	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user _cie'));
-		Log::add(new LogEntry(print_r($data, true), Log::DEBUG, 'plg_user _cie'));
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user_cie'));
+		Log::add(new LogEntry(print_r($data, true), Log::DEBUG, 'plg_user_cie'));
 
 		if (!($form instanceof Form))
 		{
@@ -284,7 +287,7 @@ class plgUserCie extends CMSPlugin
 
 		// Check we are manipulating a valid form.
 		$name = $form->getName();
-		Log::add(new LogEntry('form name: ' . $name, Log::DEBUG, 'plg_user _cie'));
+		Log::add(new LogEntry('form name: ' . $name, Log::DEBUG, 'plg_user_cie'));
 
 		if (!in_array($name, array('com_admin.profile', 'com_users.user', 'com_users.profile', 'com_users.registration')))
 		{
@@ -316,11 +319,18 @@ class plgUserCie extends CMSPlugin
 			{
 				$profile = $data->profile;
 			}
-			Log::add(new LogEntry('cie.cie: ' . $this->app->getUserState('cie.cie'), Log::DEBUG, 'plg_user _cie'));
+			Log::add(new LogEntry('cie.cie: ' . $this->app->getUserState('cie.cie'), Log::DEBUG, 'plg_user_cie'));
 			if ($this->app->getUserState('cie.cie'))
 			{
 				if (in_array($name, array('com_users.profile', 'com_users.registration')))
 				{
+					$form->setFieldAttribute('name', 'readonly', 'true');
+					$form->setFieldAttribute('username', 'readonly', 'true');
+					$form->setFieldAttribute('name', 'readonly', 'true', 'profile');
+					$form->setFieldAttribute('familyName', 'readonly', 'true', 'profile');
+					$form->setFieldAttribute('gender', 'readonly', 'true', 'profile');
+					$form->setFieldAttribute('dateOfBirth', 'readonly', 'true', 'profile');
+					$form->setFieldAttribute('placeOfBirth', 'readonly', 'true', 'profile');
 					$form->removeField('password1');
 					$form->removeField('password2');
 				}
@@ -333,6 +343,8 @@ class plgUserCie extends CMSPlugin
 				}
 			}
 		}
+
+
 
 		return true;
 	}
@@ -351,7 +363,7 @@ class plgUserCie extends CMSPlugin
 	 */
 	public function onUserAfterSave($data, $isnew, $success, $msg)
 	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user _cie'));
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user_cie'));
 
 		$userId = JArrayHelper::getValue($data, 'id', 0, 'int');
 
@@ -424,7 +436,7 @@ class plgUserCie extends CMSPlugin
 	 */
 	public function onUserAfterDelete($user, $success, $msg)
 	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user _cie'));
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user_cie'));
 
 		if (!$success)
 		{
@@ -465,17 +477,16 @@ class plgUserCie extends CMSPlugin
 	 */
 	public function onUserLogin($user, $options = array())
 	{
-		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user _cie'));
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user_cie'));
 		$tmp = $user;
 		if (isset($tmp['password'])) {
 			$tmp['password'] = '*******';
 		}
-		Log::add(new LogEntry(print_r($tmp, true), Log::DEBUG, 'plg_user _cie'));
+		Log::add(new LogEntry(print_r($tmp, true), Log::DEBUG, 'plg_user_cie'));
 
 		if (($user['status'] == 1) && ($user['type'] == 'SPiD'))
 		{
 			unset($user['error_message']);
-			$user['cie']['cie'] = true;
 			$this->app->setUserState('cie.cie', true);
 
 			try
@@ -498,19 +509,19 @@ class plgUserCie extends CMSPlugin
 					if (isset($user['cie'][$k]))
 					{
 						$tuple = $userId . ', ' . $this->db->quote('profile.' . $k) . ', ' . $this->db->quote(json_encode($user['cie'][$k])) . ', ' . $order++;
-						Log::add(new LogEntry($tuple, Log::DEBUG, 'plg_user _cie'));
+						Log::add(new LogEntry($tuple, Log::DEBUG, 'plg_user_cie'));
 						$tuples[] = $tuple;
 					}
 				}
 
 				$query = 'REPLACE INTO #__user_profiles VALUES (' . implode('), (', $tuples) . ')';
-				Log::add(new LogEntry($query, Log::DEBUG, 'plg_user _cie'));
+				Log::add(new LogEntry($query, Log::DEBUG, 'plg_user_cie'));
 				$this->db->setQuery($query);
 				$this->db->execute();
 			}
 			catch (RuntimeException $e)
 			{
-				Log::add(new LogEntry($e->getMessage(), Log::DEBUG, 'plg_user _cie'));
+				Log::add(new LogEntry($e->getMessage(), Log::DEBUG, 'plg_user_cie'));
 				return false;
 			}
 		}
