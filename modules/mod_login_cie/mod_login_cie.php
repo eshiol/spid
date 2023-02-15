@@ -43,7 +43,7 @@ if ($auth == 'SAML')
 		{
 			require_once(JPATH_SPIDPHP . '/spid-php.php');
 
-			jimport('eshiol.SPiD.SPiD');
+			jimport('eshiol.SPiD.CiE');
 			$continue = true;
 		}
 	}
