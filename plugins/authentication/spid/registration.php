@@ -103,8 +103,7 @@ class SpidModelRegistration extends UsersModelRegistration
 		}
 
 		$config = Factory::getConfig();
-		$db     = $this->getDbo();
-		$query  = $db->getQuery(true);
+		$query  = $this->_db->getQuery(true);
 
 		// Compile the notification mail values.
 		$data             = $user->getProperties();
@@ -228,16 +227,16 @@ class SpidModelRegistration extends UsersModelRegistration
 
 			// Get all admin users
 			$query->clear()
-				->select($db->quoteName(array('name', 'email', 'sendEmail', 'id')))
-				->from($db->quoteName('#__users'))
-				->where($db->quoteName('sendEmail') . ' = 1')
-				->where($db->quoteName('block') . ' = 0');
+				->select($this->_db->quoteName(array('name', 'email', 'sendEmail', 'id')))
+				->from($this->_db->quoteName('#__users'))
+				->where($this->_db->quoteName('sendEmail') . ' = 1')
+				->where($this->_db->quoteName('block') . ' = 0');
 
-			$db->setQuery($query);
+			$this->_db->setQuery($query);
 
 			try
 			{
-				$rows = $db->loadObjectList();
+				$rows = $this->_db->loadObjectList();
 			}
 			catch (RuntimeException $e)
 			{
@@ -285,16 +284,16 @@ class SpidModelRegistration extends UsersModelRegistration
 
 			// Get all admin users
 			$query->clear()
-				->select($db->quoteName(array('name', 'email', 'sendEmail')))
-				->from($db->quoteName('#__users'))
-				->where($db->quoteName('sendEmail') . ' = 1')
-				->where($db->quoteName('block') . ' = 0');
+				->select($this->_db->quoteName(array('name', 'email', 'sendEmail')))
+				->from($this->_db->quoteName('#__users'))
+				->where($this->_db->quoteName('sendEmail') . ' = 1')
+				->where($this->_db->quoteName('block') . ' = 0');
 
-			$db->setQuery($query);
+			$this->_db->setQuery($query);
 
 			try
 			{
-				$rows = $db->loadObjectList();
+				$rows = $this->_db->loadObjectList();
 			}
 			catch (RuntimeException $e)
 			{
@@ -325,17 +324,16 @@ class SpidModelRegistration extends UsersModelRegistration
 			$this->setError(Text::_('COM_USERS_REGISTRATION_SEND_MAIL_FAILED'));
 
 			// Send a system message to administrators receiving system mails
-			$db = $this->getDbo();
 			$query->clear()
-				->select($db->quoteName('id'))
-				->from($db->quoteName('#__users'))
-				->where($db->quoteName('block') . ' = ' . (int) 0)
-				->where($db->quoteName('sendEmail') . ' = ' . (int) 1);
-			$db->setQuery($query);
+				->select($this->_db->quoteName('id'))
+				->from($this->_db->quoteName('#__users'))
+				->where($this->_db->quoteName('block') . ' = ' . (int) 0)
+				->where($this->_db->quoteName('sendEmail') . ' = ' . (int) 1);
+			$this->_db->setQuery($query);
 
 			try
 			{
-				$userids = $db->loadColumn();
+				$userids = $this->_db->loadColumn();
 			}
 			catch (RuntimeException $e)
 			{
@@ -353,21 +351,21 @@ class SpidModelRegistration extends UsersModelRegistration
 				foreach ($userids as $userid)
 				{
 					$values = array(
-						$db->quote($userid),
-						$db->quote($userid),
-						$db->quote($jdate->toSql()),
-						$db->quote(Text::_('COM_USERS_MAIL_SEND_FAILURE_SUBJECT')),
-						$db->quote(Text::sprintf('COM_USERS_MAIL_SEND_FAILURE_BODY', $return, $data['username']))
+						$this->_db->quote($userid),
+						$this->_db->quote($userid),
+						$this->_db->quote($jdate->toSql()),
+						$this->_db->quote(Text::_('COM_USERS_MAIL_SEND_FAILURE_SUBJECT')),
+						$this->_db->quote(Text::sprintf('COM_USERS_MAIL_SEND_FAILURE_BODY', $return, $data['username']))
 					);
 					$query->clear()
-						->insert($db->quoteName('#__messages'))
-						->columns($db->quoteName(array('user_id_from', 'user_id_to', 'date_time', 'subject', 'message')))
+						->insert($this->_db->quoteName('#__messages'))
+						->columns($this->_db->quoteName(array('user_id_from', 'user_id_to', 'date_time', 'subject', 'message')))
 						->values(implode(',', $values));
-					$db->setQuery($query);
+					$this->_db->setQuery($query);
 
 					try
 					{
-						$db->execute();
+						$this->_db->execute();
 					}
 					catch (RuntimeException $e)
 					{
