@@ -8,12 +8,12 @@
  *
  * @author      Helios Ciancio <info (at) eshiol (dot) it>
  * @link        https://www.eshiol.it
- * @copyright   Copyright (C) 2022 - 2023 Helios Ciancio. All rights reserved
+ * @copyright   Copyright (C) 2022 - 2023 Helios Ciancio.  All rights reserved.
  * @license     http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3
- * SPiD  for  Joomla!  is  free software. This version may have been modified
- * pursuant to the GNU General Public License, and as distributed it includes
- * or is derivative of works licensed under the GNU General Public License or
- * other free or open source software licenses.
+ * Joomla.Plugins.Authentication.CIE  is  free  software. This version may have
+ * been modified pursuant to the GNU General Public License, and as distributed
+ * it includes or is derivative of works licensed under the GNU  General Public
+ * License or other free or open source software licenses.
  */
 
 defined('_JEXEC') or die;
@@ -21,6 +21,7 @@ defined('_JEXEC') or die;
 use eshiol\SPiD\CiE;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Authentication\Authentication;
+use Joomla\CMS\Helper\LibraryHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Log\LogEntry;
@@ -36,7 +37,11 @@ if (!defined('JPATH_SPIDPHP'))
 	$params = new Registry($plugin->params);
 	define('JPATH_SPIDPHP', $params->get('spid-php_path', JPATH_LIBRARIES . '/eshiol/spid-php'));
 }
-require_once(JPATH_SPIDPHP . '/spid-php.php');
+defined('JPATH_SPIDPHP_SIMPLESAMLPHP') or define('JPATH_SPIDPHP_SIMPLESAMLPHP', JPATH_SPIDPHP . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'simplesamlphp' . DIRECTORY_SEPARATOR . 'simplesamlphp');
+if (file_exists(JPATH_SPIDPHP . '/spid-php.php'))
+{
+	require_once(JPATH_SPIDPHP . '/spid-php.php');
+}
 jimport('eshiol.SPiD.CiE');
 
 class plgAuthenticationCie extends CMSPlugin
@@ -57,7 +62,14 @@ class plgAuthenticationCie extends CMSPlugin
 	protected $autoloadLanguage = true;
 
 	/**
-	 * SPiD attributes
+	 * Database object
+	 *
+	 * @var    JDatabaseDriver
+	 */
+	protected $db;
+
+	/**
+	 * CIE attributes
 	 *
 	 * @var array
 	 */
@@ -80,6 +92,20 @@ class plgAuthenticationCie extends CMSPlugin
 		Log::addLogger(array('logger' => (null !== $this->params->get('logger')) ?$this->params->get('logger') : 'messagequeue', 'extension' => 'plg_authentication_cie'), LOG::ALL & ~LOG::DEBUG, array('plg_authentication_cie'));
 
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_authentication_cie'));
+
+		if (!$this->checkSPiD())
+		{
+			// Disable all CIE plugins
+			$query = $this->db->getQuery(true);
+			$query->update($this->db->quoteName('#__extensions'))
+				->set($this->db->quoteName('enabled') . ' = 0')
+				->where($this->db->quoteName('type') . ' = ' . $this->db->quote('plugin'))
+				->where($this->db->quoteName('element') . ' = ' . $this->db->quote('cie'));
+			Log::add(new LogEntry($query, Log::DEBUG, 'plg_authentication_cie'));
+			$this->db->setQuery($query)->execute();
+
+			return;
+		}
 	}
 
 	/**
@@ -94,6 +120,16 @@ class plgAuthenticationCie extends CMSPlugin
 	public function onUserAuthenticate($credentials, $options, &$response)
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_authentication_cie'));
+
+		if ($this->app->isClient('administrator'))
+		{
+			return;
+		}
+
+		if (!$this->checkSPiD())
+		{
+			return;
+		}
 
 		$environment = (int) $this->params->get('environment', 1);
 		$production  = ($environment == 3);
@@ -126,7 +162,7 @@ class plgAuthenticationCie extends CMSPlugin
 		    	Log::add(new LogEntry($attribute . ": " . $value[0], Log::DEBUG, 'plg_authentication_cie'));
 		    }
 
-		    $response->type = 'CIE';
+		    $response->type = 'CiE';
 
 			if (!isset($attributes['fiscalNumber']))
 			{
@@ -194,7 +230,7 @@ class plgAuthenticationCie extends CMSPlugin
 
 			Log::add(new LogEntry(print_r($response, true), Log::DEBUG, 'plg_authentication_cie'));
 		}
-		else
+		elseif (isset($_REQUEST['idp']))
 		{
 			Log::add(new LogEntry('Authenticating...', Log::DEBUG, 'plg_authentication_cie'));
 			Log::add(new LogEntry(print_r($_REQUEST, true), Log::DEBUG, 'plg_authentication_cie'));
@@ -206,6 +242,89 @@ class plgAuthenticationCie extends CMSPlugin
 			}
 		}
 
+		return true;
+	}
+
+	/**
+	 * @param   integer		$userid		The user id
+	 * @param	string		$key		The profile key
+	 * @param	string		$default	The default value
+	 *
+	 * @return  string
+	 *
+	 * @since   3.10.2
+	 */
+	private function getProfile($userid, $key, $default = '')
+	{
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_authentication_cie'));
+
+		$query = $this->db->getQuery(true)
+			->select($this->db->quoteName('profile_value'))
+			->from($this->db->quoteName('#__user_profiles'))
+			->where($this->db->quoteName('user_id') . ' = ' . (int)$userid)
+			->where($this->db->quoteName('profile_key') . ' = ' . $this->db->quote('profile.' . $key));
+		$this->db->setQuery($query);
+		$value = json_decode($this->db->LoadResult());
+
+		return $value ?: $default;
+	}
+
+	/**
+	 * Chack SPID-PHP installation
+	 *
+	 * @return  boolean
+	 *
+	 * @since   3.10.2
+	 */
+	protected function checkSPiD()
+	{
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_authentication_cie'));
+
+		if (!file_exists(JPATH_SPIDPHP . '/spid-php.php'))
+		{
+			if ($this->params->get('debug', 0))
+			{
+				Log::add(new LogEntry('PLG_AUTHENTICATION_CIE_SPIDPHPNOTFOUND', Log::ERROR, 'plg_authentication_cie'));
+			}
+			return false;
+		}
+		elseif (!LibraryHelper::isEnabled('eshiol/SPiD'))
+		{
+			if ($this->params->get('debug', 0))
+			{
+				Log::add(new LogEntry('PLG_AUTHENTICATION_CIE_SPIDLIBRARYDISABLED', Log::ERROR, 'plg_authentication_cie'));
+			}
+			return false;
+		}
+		elseif (!file_exists(JPATH_SPIDPHP_SIMPLESAMLPHP . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php'))
+		{
+			if ($this->params->get('debug', 0))
+			{
+				Log::add(new LogEntry('PLG_AUTHENTICATION_CIE_CONFIGFILENOTFOUND', Log::ERROR, 'plg_authentication_cie'));
+			}
+			return false;
+		}
+		elseif (!file_exists(JPATH_SPIDPHP_SIMPLESAMLPHP . DIRECTORY_SEPARATOR . 'metadata' . DIRECTORY_SEPARATOR . 'saml20-idp-remote.php'))
+		{
+			if ($this->params->get('debug', 0))
+			{
+				Log::add(new LogEntry('PLG_AUTHENTICATION_CIE_METADATANOTFOUND', Log::ERROR, 'plg_authentication_cie'));
+			}
+			return false;
+		}
+		else
+		{
+			include JPATH_SPIDPHP_SIMPLESAMLPHP . '/config/authsources.php';
+
+			if (!file_exists(JPATH_SPIDPHP_SIMPLESAMLPHP . DIRECTORY_SEPARATOR . 'cert' . DIRECTORY_SEPARATOR . $config['service']['privatekey']))
+			{
+				if ($this->params->get('debug', 0))
+				{
+					Log::add(new LogEntry('PLG_AUTHENTICATION_CIE_CERTNOTFOUND', Log::ERROR, 'plg_authentication_cie'));
+				}
+				return false;
+			}
+		}
 		return true;
 	}
 
