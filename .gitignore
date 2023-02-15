@@ -1,1 +1,4 @@
 /files/
+/libraries/eshiol/spid-php/authsources.php
+/libraries/eshiol/spid-php/config.php
+/libraries/eshiol/spid-php/saml20-idp-remote.php
