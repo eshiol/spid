@@ -28,25 +28,17 @@ use Joomla\CMS\Log\Log;
 use Joomla\CMS\Log\LogEntry;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\Router\Route;
+use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\User;
 use Joomla\Registry\Registry;
 
-if (!defined('JPATH_SPIDPHP'))
-{
-	$plugin = PluginHelper::getPlugin('authentication', 'spid');
-	$params = new Registry($plugin->params);
-	define('JPATH_SPIDPHP', $params->get('spid-php_path', JPATH_LIBRARIES . '/eshiol/spid-php'));
-}
-defined('JPATH_SPIDPHP_SIMPLESAMLPHP') or define('JPATH_SPIDPHP_SIMPLESAMLPHP', JPATH_SPIDPHP . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'simplesamlphp' . DIRECTORY_SEPARATOR . 'simplesamlphp');
-if (file_exists(JPATH_SPIDPHP . '/spid-php.php'))
-{
-	require_once(JPATH_SPIDPHP . '/spid-php.php');
-}
+defined('JPATH_SPIDPHP')                     || define('JPATH_SPIDPHP', (new Registry(PluginHelper::getPlugin('authentication', 'spid') ? PluginHelper::getPlugin('authentication', 'spid')->params : ''))->get('spid-php_path', JPATH_LIBRARIES . '/eshiol/spid-php'));
 
-/*if (LibraryHelper::isEnabled('eshiol/SPiD'))
-{
-	require_once(JPATH_LIBRARIES . '/eshiol/SPiD/SPiD.php');
-}*/
+defined('JPATH_SPIDPHP_SIMPLESAMLPHP')       || define('JPATH_SPIDPHP_SIMPLESAMLPHP', JPATH_SPIDPHP . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'simplesamlphp' . DIRECTORY_SEPARATOR . 'simplesamlphp');
+
+file_exists(JPATH_SPIDPHP . '/spid-php.php') && require_once(JPATH_SPIDPHP . '/spid-php.php');
+
 jimport('eshiol.SPiD.SPiD');
 
 class PlgUserSpid extends CMSPlugin
@@ -174,9 +166,45 @@ class PlgUserSpid extends CMSPlugin
 		$production = false;
 		$spidsdk    = new SPiD($production);
 
+		Log::add(new LogEntry('isAuthenticated: ' . $spidsdk->isAuthenticated(), Log::DEBUG, 'plg_user_spid'));
 		if ($spidsdk->isAuthenticated())
 		{
-			$spidsdk->logout(null, false);
+			$return = Factory::getApplication()->input->get('return', null, 'base64');
+			if (empty($return))
+			{
+				// Stay on the same page
+				$url = Uri::getInstance()->toString();
+		
+				// If currect menu has login_redirect_menuitem go to
+				if ($item = Factory::getApplication()->getMenu()->getActive())
+				{
+					if ($redirectId = $item->getParams()->get('login_redirect_menuitem'))
+					{
+						$lang = '';
+		
+						if ($item->language !== '*' && Multilanguage::isEnabled())
+						{
+							$lang = '&lang=' . $item->language;
+						}
+		
+						$url = 'index.php?Itemid=' . $redirectId . $lang;
+					}
+				}
+		
+				$url    = $params->get('login', $url);
+				if (is_numeric($url))
+				{
+					$url = 'index.php?Itemid=' . $url;
+				}
+				$return = $url;
+			}
+			else
+			{
+				$return = base64_decode($return);
+			}
+			Log::add(new LogEntry('returnTo: ' . $return, Log::DEBUG, 'plg_user_spid'));
+
+			$spidsdk->logout(Route::_($return, false), true);
 		}
 
 		return true;
@@ -388,7 +416,7 @@ class PlgUserSpid extends CMSPlugin
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user_spid'));
 
-		$userId = JArrayHelper::getValue($data, 'id', 0, 'int');
+		/*$userId = JArrayHelper::getValue($data, 'id', 0, 'int');
 
 		if ($userId && $success && isset($data['profile']) && (count($data['profile'])))
 		{
@@ -426,6 +454,24 @@ class PlgUserSpid extends CMSPlugin
 				return false;
 			}
 
+			$uParams = JComponentHelper::getParams('com_users');
+			$userActivation = $this->params->get('userActivation', $uParams->get('useractivation'));
+			if ($userActivation == 0)
+			{
+				$this->app->login(
+					['username' => '', 'password' => ''],
+					['remember' => false, 'silent' => true]
+				);
+
+				$return = base64_decode($this->app->input->getInputForRequestMethod()->get('return', '', 'BASE64'));
+
+				$this->app->redirect(JRoute::_($return, false));
+			}
+		}*/
+
+		$user = Factory::getUser();
+		if ($isnew && $success && $user->guest && $this->app->getUserState('spid.spid'))
+		{
 			$uParams = JComponentHelper::getParams('com_users');
 			$userActivation = $this->params->get('userActivation', $uParams->get('useractivation'));
 			if ($userActivation == 0)
@@ -510,7 +556,6 @@ class PlgUserSpid extends CMSPlugin
 		if (($user['status'] == 1) && ($user['type'] == 'SPiD'))
 		{
 			unset($user['error_message']);
-			$user['spid']['spid'] = true;
 			$this->app->setUserState('spid.spid', true);
 			$this->app->setUserState('spid.loa', $user['spid']['loa']);
 
@@ -549,6 +594,7 @@ class PlgUserSpid extends CMSPlugin
 				Log::add(new LogEntry($e->getMessage(), Log::DEBUG, 'plg_user_spid'));
 				return false;
 			}
+
 		}
 
 		return true;

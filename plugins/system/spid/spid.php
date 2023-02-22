@@ -27,22 +27,12 @@ use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\Registry\Registry;
 
-if (!defined('JPATH_SPIDPHP'))
-{
-	$plugin = PluginHelper::getPlugin('authentication', 'spid');
-	$params = new Registry($plugin->params);
-	define('JPATH_SPIDPHP', $params->get('spid-php_path', JPATH_LIBRARIES . '/eshiol/spid-php'));
-}
-defined('JPATH_SPIDPHP_SIMPLESAMLPHP') or define('JPATH_SPIDPHP_SIMPLESAMLPHP', JPATH_SPIDPHP . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'simplesamlphp' . DIRECTORY_SEPARATOR . 'simplesamlphp');
-if (file_exists(JPATH_SPIDPHP . '/spid-php.php'))
-{
-	require_once(JPATH_SPIDPHP . '/spid-php.php');
-}
+defined('JPATH_SPIDPHP')                     || define('JPATH_SPIDPHP', (new Registry(PluginHelper::getPlugin('authentication', 'spid') ? PluginHelper::getPlugin('authentication', 'spid')->params : ''))->get('spid-php_path', JPATH_LIBRARIES . '/eshiol/spid-php'));
 
-/*if (LibraryHelper::isEnabled('eshiol/SPiD'))
-{
-	require_once(JPATH_LIBRARIES . '/eshiol/SPiD/SPiD.php');
-}*/
+defined('JPATH_SPIDPHP_SIMPLESAMLPHP')       || define('JPATH_SPIDPHP_SIMPLESAMLPHP', JPATH_SPIDPHP . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'simplesamlphp' . DIRECTORY_SEPARATOR . 'simplesamlphp');
+
+file_exists(JPATH_SPIDPHP . '/spid-php.php') && require_once(JPATH_SPIDPHP . '/spid-php.php');
+
 jimport('eshiol.SPiD.SPiD');
 
 /**

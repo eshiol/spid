@@ -28,25 +28,17 @@ use Joomla\CMS\Log\Log;
 use Joomla\CMS\Log\LogEntry;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\Router\Route;
+use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\User;
 use Joomla\Registry\Registry;
 
-if (!defined('JPATH_SPIDPHP'))
-{
-	$plugin = PluginHelper::getPlugin('authentication', 'cie');
-	$params = new Registry($plugin->params);
-	define('JPATH_SPIDPHP', $params->get('spid-php_path', JPATH_LIBRARIES . '/eshiol/spid-php'));
-}
-defined('JPATH_SPIDPHP_SIMPLESAMLPHP') or define('JPATH_SPIDPHP_SIMPLESAMLPHP', JPATH_SPIDPHP . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'simplesamlphp' . DIRECTORY_SEPARATOR . 'simplesamlphp');
-if (file_exists(JPATH_SPIDPHP . '/spid-php.php'))
-{
-	require_once(JPATH_SPIDPHP . '/spid-php.php');
-}
+defined('JPATH_SPIDPHP')                     || define('JPATH_SPIDPHP', (new Registry(PluginHelper::getPlugin('authentication', 'cie') ? PluginHelper::getPlugin('authentication', 'cie')->params : ''))->get('spid-php_path', JPATH_LIBRARIES . '/eshiol/spid-php'));
 
-/*if (LibraryHelper::isEnabled('eshiol/SPiD'))
-{
-	require_once(JPATH_LIBRARIES . '/eshiol/SPiD/SPiD.php');
-}*/
+defined('JPATH_SPIDPHP_SIMPLESAMLPHP')       || define('JPATH_SPIDPHP_SIMPLESAMLPHP', JPATH_SPIDPHP . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'simplesamlphp' . DIRECTORY_SEPARATOR . 'simplesamlphp');
+
+file_exists(JPATH_SPIDPHP . '/spid-php.php') && require_once(JPATH_SPIDPHP . '/spid-php.php');
+
 jimport('eshiol.SPiD.CiE');
 
 class PlgUserCie extends CMSPlugin
@@ -55,7 +47,7 @@ class PlgUserCie extends CMSPlugin
 	 * Application object.
 	 *
 	 * @var    JApplicationCms
-	 * @since  3.8.5
+	 * @since  3.10
 	 */
 	protected $app;
 
@@ -129,11 +121,12 @@ class PlgUserCie extends CMSPlugin
 	 *
 	 * @return  boolean  True on success
 	 *
-	 * @since   3.8.5
+	 * @since   3.10
 	 */
 	public function onUserAfterLogout($options)
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user_cie'));
+		Log::add(new LogEntry(print_r($options, true), Log::DEBUG, 'plg_user_cie'));
 
 		if (! $this->checkSPiD())
 		{
@@ -143,10 +136,47 @@ class PlgUserCie extends CMSPlugin
 		$production = false;
 		$spidsdk    = new CiE($production);
 
+		Log::add(new LogEntry('isAuthenticated: ' . $spidsdk->isAuthenticated(), Log::DEBUG, 'plg_user_cie'));
 		if ($spidsdk->isAuthenticated())
 		{
-			$spidsdk->logout(null, false);
+			$return = Factory::getApplication()->input->get('return', null, 'base64');
+			if (empty($return))
+			{
+				// Stay on the same page
+				$url = Uri::getInstance()->toString();
+		
+				// If currect menu has login_redirect_menuitem go to
+				if ($item = Factory::getApplication()->getMenu()->getActive())
+				{
+					if ($redirectId = $item->getParams()->get('login_redirect_menuitem'))
+					{
+						$lang = '';
+		
+						if ($item->language !== '*' && Multilanguage::isEnabled())
+						{
+							$lang = '&lang=' . $item->language;
+						}
+		
+						$url = 'index.php?Itemid=' . $redirectId . $lang;
+					}
+				}
+		
+				$url    = $params->get('login', $url);
+				if (is_numeric($url))
+				{
+					$url = 'index.php?Itemid=' . $url;
+				}
+				$return = $url;
+			}
+			else
+			{
+				$return = base64_decode($return);
+			}
+			Log::add(new LogEntry('returnTo: ' . $return, Log::DEBUG, 'plg_user_cie'));
+
+			$spidsdk->logout(Route::_($return, false), true);
 		}
+
 		return true;
 	}
 
@@ -272,7 +302,7 @@ class PlgUserCie extends CMSPlugin
 	 *
 	 * @return  boolean
 	 *
-	 * @since   3.8.5
+	 * @since   3.10
 	 */
 	public function onContentPrepareForm($form, $data)
 	{
@@ -328,6 +358,7 @@ class PlgUserCie extends CMSPlugin
 					$form->setFieldAttribute('username', 'readonly', 'true');
 					$form->setFieldAttribute('name', 'readonly', 'true', 'profile');
 					$form->setFieldAttribute('familyName', 'readonly', 'true', 'profile');
+					$form->setFieldAttribute('fiscalNumber', 'readonly', 'true', 'profile');
 					$form->setFieldAttribute('gender', 'readonly', 'true', 'profile');
 					$form->setFieldAttribute('dateOfBirth', 'readonly', 'true', 'profile');
 					$form->setFieldAttribute('placeOfBirth', 'readonly', 'true', 'profile');
@@ -359,13 +390,13 @@ class PlgUserCie extends CMSPlugin
 	 *
 	 * @return  void
 	 *
-	 * @since   3.8.5
+	 * @since   3.10
 	 */
 	public function onUserAfterSave($data, $isnew, $success, $msg)
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user_cie'));
 
-		$userId = JArrayHelper::getValue($data, 'id', 0, 'int');
+		/*$userId = JArrayHelper::getValue($data, 'id', 0, 'int');
 
 		if ($userId && $success && isset($data['profile']) && (count($data['profile'])))
 		{
@@ -402,14 +433,18 @@ class PlgUserCie extends CMSPlugin
 				$this->_subject->setError($e->getMessage());
 				return false;
 			}
+		}*/
 
+		$user = Factory::getUser();
+		if ($isnew && $success && $user->guest && $this->app->getUserState('cie.cie'))
+		{
 			$uParams = JComponentHelper::getParams('com_users');
 			$userActivation = $this->params->get('userActivation', $uParams->get('useractivation'));
 			if ($userActivation == 0)
 			{
 				$this->app->login(
 					['username' => '', 'password' => ''],
-					['remember' => false, 'silent' => true]
+					['remember' => false, 'silent' => true, 'idp' => 'CIE']
 				);
 
 				$return = base64_decode($this->app->input->getInputForRequestMethod()->get('return', '', 'BASE64'));
@@ -432,7 +467,7 @@ class PlgUserCie extends CMSPlugin
 	 *
 	 * @return  boolean
 	 *
-	 * @since   3.8.5
+	 * @since   3.10
 	 */
 	public function onUserAfterDelete($user, $success, $msg)
 	{
@@ -473,7 +508,7 @@ class PlgUserCie extends CMSPlugin
 	 *
 	 * @return  boolean  True on success.
 	 *
-	 * @since	3.8.5
+	 * @since	3.10
 	 */
 	public function onUserLogin($user, $options = array())
 	{
@@ -484,7 +519,7 @@ class PlgUserCie extends CMSPlugin
 		}
 		Log::add(new LogEntry(print_r($tmp, true), Log::DEBUG, 'plg_user_cie'));
 
-		if (($user['status'] == 1) && ($user['type'] == 'SPiD'))
+		if (($user['status'] == 1) && ($user['type'] == 'CiE'))
 		{
 			unset($user['error_message']);
 			$this->app->setUserState('cie.cie', true);
@@ -524,8 +559,34 @@ class PlgUserCie extends CMSPlugin
 				Log::add(new LogEntry($e->getMessage(), Log::DEBUG, 'plg_user_cie'));
 				return false;
 			}
+
 		}
 
 		return true;
+	}
+
+	/**
+	 * Method is called before user data is stored in the database
+	 * Set the user group
+	 *
+	 * @param   array    $user   Holds the old user data.
+	 * @param   boolean  $isnew  True if a new user is stored.
+	 * @param   array    $data   Holds the new user data.
+	 *
+	 * @return    boolean
+	 *
+	 * @since   3.10.2
+	 */
+	public function onUserBeforeSave($user, $isnew, $data)
+	{
+		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user_cie'));
+		if ($isnew && $this->app->getUserState('cie.cie'))
+		{
+			// Read the default user group option from com_users
+			$uParams = ComponentHelper::getParams('com_users');
+			$defaultUserGroup = $this->params->get('new_usertype', $uParams->get('new_usertype', $uParams->get('guest_usergroup', 1)));
+			Log::add(new LogEntry('defaultUserGroup: ' . $defaultUserGroup, Log::DEBUG, 'plg_user_cie'));
+			$data->groups = array($defaultUserGroup);
+		}
 	}
 }

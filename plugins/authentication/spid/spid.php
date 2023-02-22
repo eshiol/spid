@@ -35,22 +35,12 @@ use Joomla\CMS\User\User;
 use Joomla\CMS\User\UserHelper;
 use Joomla\Registry\Registry;
 
-if (!defined('JPATH_SPIDPHP'))
-{
-	$plugin = PluginHelper::getPlugin('authentication', 'spid');
-	$params = new Registry($plugin->params);
-	define('JPATH_SPIDPHP', $params->get('spid-php_path', JPATH_LIBRARIES . '/eshiol/spid-php'));
-}
-defined('JPATH_SPIDPHP_SIMPLESAMLPHP') or define('JPATH_SPIDPHP_SIMPLESAMLPHP', JPATH_SPIDPHP . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'simplesamlphp' . DIRECTORY_SEPARATOR . 'simplesamlphp');
-if (file_exists(JPATH_SPIDPHP . '/spid-php.php'))
-{
-	require_once(JPATH_SPIDPHP . '/spid-php.php');
-}
+defined('JPATH_SPIDPHP')                     || define('JPATH_SPIDPHP', (new Registry(PluginHelper::getPlugin('authentication', 'spid') ? PluginHelper::getPlugin('authentication', 'spid')->params : ''))->get('spid-php_path', JPATH_LIBRARIES . '/eshiol/spid-php'));
 
-/*if (LibraryHelper::isEnabled('eshiol/SPiD'))
-{
-	require_once(JPATH_LIBRARIES . '/eshiol/SPiD/SPiD.php');
-}*/
+defined('JPATH_SPIDPHP_SIMPLESAMLPHP')       || define('JPATH_SPIDPHP_SIMPLESAMLPHP', JPATH_SPIDPHP . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'simplesamlphp' . DIRECTORY_SEPARATOR . 'simplesamlphp');
+
+file_exists(JPATH_SPIDPHP . '/spid-php.php') && require_once(JPATH_SPIDPHP . '/spid-php.php');
+
 jimport('eshiol.SPiD.SPiD');
 
 class PlgAuthenticationSpid extends CMSPlugin
@@ -231,7 +221,7 @@ class PlgAuthenticationSpid extends CMSPlugin
 			if ($this->params->get('removeTINPrefix', true) && (($i = strpos($attributes['fiscalNumber'][0], '-')) !== false))
 			{
 				$username = substr($attributes['fiscalNumber'][0], $i + 1);
-				$attributes['fiscalNumber'][0] = $username;
+				//$attributes['fiscalNumber'][0] = $username;
 			}
 			else
 			{

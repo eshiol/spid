@@ -33,17 +33,12 @@ use Joomla\CMS\String\PunycodeHelper;
 use Joomla\CMS\User\User;
 use Joomla\Registry\Registry;
 
-if (!defined('JPATH_SPIDPHP'))
-{
-	$plugin = PluginHelper::getPlugin('authentication', 'cie');
-	$params = new Registry($plugin->params);
-	define('JPATH_SPIDPHP', $params->get('spid-php_path', JPATH_LIBRARIES . '/eshiol/spid-php'));
-}
-defined('JPATH_SPIDPHP_SIMPLESAMLPHP') or define('JPATH_SPIDPHP_SIMPLESAMLPHP', JPATH_SPIDPHP . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'simplesamlphp' . DIRECTORY_SEPARATOR . 'simplesamlphp');
-if (file_exists(JPATH_SPIDPHP . '/spid-php.php'))
-{
-	require_once(JPATH_SPIDPHP . '/spid-php.php');
-}
+defined('JPATH_SPIDPHP')                     || define('JPATH_SPIDPHP', (new Registry(PluginHelper::getPlugin('authentication', 'cie') ? PluginHelper::getPlugin('authentication', 'cie')->params : ''))->get('spid-php_path', JPATH_LIBRARIES . '/eshiol/spid-php'));
+
+defined('JPATH_SPIDPHP_SIMPLESAMLPHP')       || define('JPATH_SPIDPHP_SIMPLESAMLPHP', JPATH_SPIDPHP . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'simplesamlphp' . DIRECTORY_SEPARATOR . 'simplesamlphp');
+
+file_exists(JPATH_SPIDPHP . '/spid-php.php') && require_once(JPATH_SPIDPHP . '/spid-php.php');
+
 jimport('eshiol.SPiD.CiE');
 
 class PlgAuthenticationCie extends CMSPlugin
@@ -137,8 +132,12 @@ class PlgAuthenticationCie extends CMSPlugin
 		$production  = ($environment == 3);
 		$service     = (empty($_REQUEST['service']) ? 'cieid' : $_REQUEST['service']);
 		$spidsdk     = new CiE($production, $service);
+		$idp         = isset($options['idp']) ? $options['idp'] : (isset($_REQUEST['idp']) ? $_REQUEST['idp'] : '');
 
-		if ($spidsdk->isAuthenticated() && isset($_REQUEST['idp']) && $spidsdk->isIdP($_REQUEST['idp']))
+		Log::add(new LogEntry('isAuthenticated: ' . $spidsdk->isAuthenticated(), Log::DEBUG, 'plg_authentication_cie'));
+		Log::add(new LogEntry('idp: ' . $idp, Log::DEBUG, 'plg_authentication_cie'));
+
+		if ($spidsdk->isAuthenticated() && $idp && $spidsdk->isIdP($idp))
 		{
 			Log::add(new LogEntry('User is authenticated', Log::DEBUG, 'plg_authentication_cie'));
 			$this->app->setUserState('cie.cie', true);
@@ -189,6 +188,7 @@ class PlgAuthenticationCie extends CMSPlugin
 			if ($this->params->get('removeTINPrefix', true) && (($i = strpos($attributes['fiscalNumber'][0], '-')) !== false))
 			{
 				$username = substr($attributes['fiscalNumber'][0], $i + 1);
+				// $attributes['fiscalNumber'][0] = $username;
 			}
 			else
 			{
@@ -196,22 +196,35 @@ class PlgAuthenticationCie extends CMSPlugin
 			}
 
 			$cie_response = [];
-			$cie_response['authsource'] = $authsource;
 			foreach($attributes as $i => $v)
 			{
 				$cie_response[$i] = $v[0];
 			}
+
+			jimport('eshiol.ItaliaPA.FiscalNumber.FiscalNumber');
+			$cf = $attributes['fiscalNumber'][0];
+			if (($i = strpos($cf, '-')) !== false)
+			{
+				// remove TINPrefix
+				$cf = substr($cf, $i + 1);
+			}
+			$fiscalNumber = new FiscalNumber($cf);
+
+			$cie_response['gender'] = $fiscalNumber->getGender();
+			$cie_response['placeOfBirth'] = $fiscalNumber->getBirthPlace();
+
 			Log::add(new LogEntry(print_r($cie_response, true), Log::DEBUG, 'plg_authentication_cie'));
 
 			$user = User::getInstance($username);
 			if ($user->id)
 			{
 				unset($response->error_message);
-				$response->cie      = $cie_response;
-				$response->status   = Authentication::STATUS_SUCCESS;
-				$response->username = $username;
-				$response->email    = PunycodeHelper::emailToPunycode($user->email);
-				$response->fullname = $attributes['name'][0] . ' ' . $attributes['familyName'][0];
+				$cie_response['authsource'] = $authsource;
+				$response->cie              = $cie_response;
+				$response->status           = Authentication::STATUS_SUCCESS;
+				$response->username         = $username;
+				$response->email            = PunycodeHelper::emailToPunycode($user->email);
+				$response->fullname         = $attributes['name'][0] . ' ' . $attributes['familyName'][0];
 			}
 			else
 			{
@@ -222,20 +235,11 @@ class PlgAuthenticationCie extends CMSPlugin
 					// user data
 					$data = [
 						'idp'      => 'CiE',
-						'name'     => ucwords($attributes['name'][0]) . ' ' . ucwords($attributes['familyName'][0]),
+						'name'     => ucwords(strtolower($attributes['name'][0])) . ' ' . strtoupper($attributes['familyName'][0]),
 						'username' => $username
 					];
 
-					jimport('eshiol.ItaliaPA.FiscalNumber.FiscalNumber');
-					$fiscalNumber = new FiscalNumber($username);
-	
-					$data['profile'] = array();
-					$data['profile']['fiscalNumber'] = $fiscalNumber->getFiscalNumber();
-					$data['profile']['name']         = ucwords($attributes['name'][0]);
-					$data['profile']['familyName']   = ucwords($attributes['familyName'][0]);
-					$data['profile']['gender']       = $fiscalNumber->getGender();
-					$data['profile']['dateOfBirth']  = $fiscalNumber->getBirthDate();
-					$data['profile']['placeOfBirth'] = $fiscalNumber->getBirthPlace();
+					$data['profile'] = $cie_response();
 		
 					// Save the data in the session.
 					$this->app->setUserState('com_users.registration.data', $data);
@@ -261,15 +265,15 @@ class PlgAuthenticationCie extends CMSPlugin
 
 			Log::add(new LogEntry(print_r($response, true), Log::DEBUG, 'plg_authentication_cie'));
 		}
-		elseif (isset($_REQUEST['idp']))
+		elseif (isset($idp))
 		{
 			Log::add(new LogEntry('Authenticating...', Log::DEBUG, 'plg_authentication_cie'));
 			Log::add(new LogEntry(print_r($_REQUEST, true), Log::DEBUG, 'plg_authentication_cie'));
-			Log::add(new LogEntry("idp " . $_REQUEST['idp'] . " is available: " . $spidsdk->isIdPAvailable($_REQUEST['idp']), Log::DEBUG, 'plg_authentication_cie'));
-			if(isset($_REQUEST['idp']) && $spidsdk->isIdPAvailable($_REQUEST['idp']) && $spidsdk->isCIEKey($_REQUEST['idp']))
+			Log::add(new LogEntry("idp " . $idp . " is available: " . $spidsdk->isIdPAvailable($idp), Log::DEBUG, 'plg_authentication_cie'));
+			if(isset($idp) && $spidsdk->isIdPAvailable($idp) && $spidsdk->isCIEKey($idp))
 			{
-				Log::add(new LogEntry('Authenticating'.$_REQUEST['idp'].'...', Log::DEBUG, 'plg_authentication_cie'));
-				$spidsdk->login($_REQUEST['idp']);
+				Log::add(new LogEntry('Authenticating'.$idp.'...', Log::DEBUG, 'plg_authentication_cie'));
+				$spidsdk->login($idp);
 			}
 		}
 
