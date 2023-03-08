@@ -239,7 +239,7 @@ class PlgAuthenticationCie extends CMSPlugin
 						'username' => $username
 					];
 
-					$data['profile'] = $cie_response();
+					$data['profile'] = $cie_response;
 		
 					// Save the data in the session.
 					$this->app->setUserState('com_users.registration.data', $data);
