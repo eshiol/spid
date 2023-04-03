@@ -9,7 +9,7 @@
 	<creationDate>__DEPLOY_DATE__</creationDate>
 	<copyright><![CDATA[(C) 2022 - 2023 Helios Ciancio. All Rights Reserved.]]></copyright>
 	<license>http://www.gnu.org/licenses/gpl-3.0.html GNU/GPL v3</license>
-	<version>3.10.2</version>
+	<version>3.10.3</version>
 	<files>
     	<filename>SPiD.php</filename>
     	<filename>CiE.php</filename>

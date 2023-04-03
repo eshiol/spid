@@ -273,7 +273,8 @@ class PlgAuthenticationCie extends CMSPlugin
 			if(isset($idp) && $spidsdk->isIdPAvailable($idp) && $spidsdk->isCIEKey($idp))
 			{
 				Log::add(new LogEntry('Authenticating'.$idp.'...', Log::DEBUG, 'plg_authentication_cie'));
-				$spidsdk->login($idp);
+				$authenticationLevel = (int) $this->params->get('authentication_level', 1);
+				$spidsdk->login($idp, $authenticationLevel);
 			}
 		}
 

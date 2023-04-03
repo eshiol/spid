@@ -35,11 +35,11 @@ class CiE extends \SPID_PHP
         parent::__construct($production, $servicename);
     }
     
-    public function login($idp, $l = 1, $returnTo = "", $attributeIndex = null, $post = false)
+    public function login($idp, $l = 3, $returnTo = "", $attributeIndex = null, $post = false)
     {
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_authentication_cie'));
 
-        parent::login($idp, 1, $returnTo, $attributeIndex, $post);
+        parent::login($idp, $l, $returnTo, $attributeIndex, $post);
     }
 }
 ?>
