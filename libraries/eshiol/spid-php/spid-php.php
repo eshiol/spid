@@ -3,6 +3,8 @@
     require_once("vendor/simplesamlphp/simplesamlphp/lib/_autoload.php");
     require_once("setup/sdk/AbstractSPID.php");
 
+    define('INTESAIDEXPIREDATE', '2023-04-23');
+
     class SPID_PHP extends \SPID\AbtractSPID {
         protected $spid_auth;
         protected $idps = array();
@@ -17,9 +19,12 @@
 			$this->idps['DEMOVALIDATOR'] = 'https://demo.spid.gov.it/validator';
 			$this->idps['VALIDATOR'] = 'https://validator.spid.gov.it';
 			$this->idps['ArubaPEC S.p.A.'] = 'https://loginspid.aruba.it';
+			$this->idps['EtnaHitech S.C.p.A.'] = 'https://id.eht.eu';
 			$this->idps['InfoCert S.p.A.'] = 'https://identity.infocert.it';
-			$this->idps['IN.TE.S.A. S.p.A.'] = 'https://spid.intesa.it';
-			$this->idps['Lepida S.p.A.'] = 'https://id.lepida.it/idp/shibboleth';
+            if (date("Y-m-d") < INTESAIDEXPIREDATE) {
+                $this->idps['IN.TE.S.A. S.p.A.'] = 'https://spid.intesa.it';
+            }
+            $this->idps['Lepida S.p.A.'] = 'https://id.lepida.it/idp/shibboleth';
 			$this->idps['Namirial'] = 'https://idp.namirialtsp.com/idp';
 			$this->idps['Poste Italiane SpA'] = 'https://posteid.poste.it';
 			$this->idps['Sielte S.p.A.'] = 'https://identity.sieltecloud.it';
@@ -356,13 +361,17 @@
 					<li class=\"spid-idp-button-link\" data-idp=\"arubaid\">
 						<button class=\"idp-button-idp-logo\" name=\"idp\" value=\"ArubaPEC S.p.A.\" type=\"submit\"><span class=\"spid-sr-only\">Aruba ID</span><img class=\"spid-idp-button-logo\" src=\"/spid4j/spid-sp-access-button/img/spid-idp-arubaid.svg\" onerror=\"this.src='/spid4j/spid-sp-access-button/img/spid-idp-arubaid.png'; this.onerror=null;\" alt=\"Aruba ID\" /></button>
 					</li>
+					<li class=\"spid-idp-button-link\" data-idp=\"https://id.eht.eu\">
+						<button class=\"idp-button-idp-logo\" name=\"idp\" value=\"EtnaHitech S.C.p.A.\" type=\"submit\"><span class=\"spid-sr-only\">etnaID</span><img class=\"spid-idp-button-logo\" src=\"/spid4j/spid-sp-access-button/img/spid-idp-etnaid.svg\" onerror=\"this.src='/spid4j/spid-sp-access-button/img/spid-idp-etnaid.png'; this.onerror=null;\" alt=\"EtnaHitech S.C.p.A.\" /></button>
+					</li>
 					<li class=\"spid-idp-button-link\" data-idp=\"infocertid\">
 						<button class=\"idp-button-idp-logo\" name=\"idp\" value=\"InfoCert S.p.A.\" type=\"submit\"><span class=\"spid-sr-only\">Infocert ID</span><img class=\"spid-idp-button-logo\" src=\"/spid4j/spid-sp-access-button/img/spid-idp-infocertid.svg\" onerror=\"this.src='/spid4j/spid-sp-access-button/img/spid-idp-infocertid.png'; this.onerror=null;\" alt=\"Infocert ID\" /></button>
-					</li>
-					<li class=\"spid-idp-button-link\" data-idp=\"intesaid\">
+					</li>"
+					. (date("Y-m-d") < INTESAIDEXPIREDATE ?         
+					"<li class=\"spid-idp-button-link\" data-idp=\"intesaid\">
 						<button class=\"idp-button-idp-logo\" name=\"idp\" value=\"IN.TE.S.A. S.p.A.\" type=\"submit\"><span class=\"spid-sr-only\">Intesa ID</span><img class=\"spid-idp-button-logo\" src=\"/spid4j/spid-sp-access-button/img/spid-idp-intesaid.svg\" onerror=\"this.src='/spid4j/spid-sp-access-button/img/spid-idp-intesaid.png'; this.onerror=null;\" alt=\"Intesa ID\" /></button>
-					</li>
-					<li class=\"spid-idp-button-link\" data-idp=\"lepidaid\">
+					</li>" : "") .
+					"<li class=\"spid-idp-button-link\" data-idp=\"lepidaid\">
 						<button class=\"idp-button-idp-logo\" name=\"idp\" value=\"Lepida S.p.A.\" type=\"submit\"><span class=\"spid-sr-only\">Lepida ID</span><img class=\"spid-idp-button-logo\" src=\"/spid4j/spid-sp-access-button/img/spid-idp-lepidaid.svg\" onerror=\"this.src='/spid4j/spid-sp-access-button/img/spid-idp-lepidaid.png'; this.onerror=null;\" alt=\"Lepida ID\" /></button>
 					</li>
 					<li class=\"spid-idp-button-link\" data-idp=\"namirialid\">
@@ -441,13 +450,17 @@
 					<li class=\"spid-idp-button-link\" data-idp=\"arubaid\">
 						<a href=\"?idp=ArubaPEC S.p.A.\"><span class=\"spid-sr-only\">Aruba ID</span><img src=\"/spid4j/spid-sp-access-button/img/spid-idp-arubaid.svg\" onerror=\"this.src='/spid4j/spid-sp-access-button/img/spid-idp-arubaid.png'; this.onerror=null;\" alt=\"Aruba ID\" /></a>
 					</li>
+					<li class=\"spid-idp-button-link\" data-idp=\"etnaid\">
+						<a href=\"?idp=EtnaHitech S.C.p.A.\"><span class=\"spid-sr-only\">etnaID</span><img src=\"/spid4j/spid-sp-access-button/img/spid-idp-etnaid.svg\" onerror=\"this.src='/spid4j/spid-sp-access-button/img/spid-idp-etnaid.png'; this.onerror=null;\" alt=\"EtnaHitech S.C.p.A.\" /></a>
+					</li>
 					<li class=\"spid-idp-button-link\" data-idp=\"infocertid\">
 						<a href=\"?idp=InfoCert S.p.A.\"><span class=\"spid-sr-only\">Infocert ID</span><img src=\"/spid4j/spid-sp-access-button/img/spid-idp-infocertid.svg\" onerror=\"this.src='/spid4j/spid-sp-access-button/img/spid-idp-infocertid.png'; this.onerror=null;\" alt=\"Infocert ID\" /></a>
-					</li>
-					<li class=\"spid-idp-button-link\" data-idp=\"intesaid\">
+					</li>"
+					. (date("Y-m-d") < INTESAIDEXPIREDATE ?         
+					"<li class=\"spid-idp-button-link\" data-idp=\"intesaid\">
 						<a href=\"?idp=IN.TE.S.A. S.p.A.\"><span class=\"spid-sr-only\">Intesa ID</span><img src=\"/spid4j/spid-sp-access-button/img/spid-idp-intesaid.svg\" onerror=\"this.src='/spid4j/spid-sp-access-button/img/spid-idp-intesaid.png'; this.onerror=null;\" alt=\"Intesa ID\" /></a>
-					</li>
-					<li class=\"spid-idp-button-link\" data-idp=\"lepidaid\">
+					</li>" : "") .
+					"<li class=\"spid-idp-button-link\" data-idp=\"lepidaid\">
 						<a href=\"?idp=Lepida S.p.A.\"><span class=\"spid-sr-only\">Lepida ID</span><img src=\"/spid4j/spid-sp-access-button/img/spid-idp-lepidaid.svg\" onerror=\"this.src='/spid4j/spid-sp-access-button/img/spid-idp-lepidaid.png'; this.onerror=null;\" alt=\"Lepida ID\" /></a>
 					</li>
 					<li class=\"spid-idp-button-link\" data-idp=\"namirialid\">
