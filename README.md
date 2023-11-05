@@ -2,7 +2,7 @@
 Package per l'integrazione nel CMS Joomla! di SPID, il Sistema Pubblico di Identità Digitale per l’accesso ai servizi online delle Pubbliche Amministrazioni italiane.
 ## Copyright
     SPiD for Joomla!
-    Copyright (C) 2023 Helios Ciancio
+    Copyright (C) 2017 - 2023 Helios Ciancio
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
