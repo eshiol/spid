@@ -158,6 +158,11 @@ class PlgUserSpid extends CMSPlugin
 	{
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user_spid'));
 
+		if ($this->app->isClient('administrator'))
+		{
+			return;
+		}
+
 		if (!$this->checkSPiD())
 		{
 			return;
