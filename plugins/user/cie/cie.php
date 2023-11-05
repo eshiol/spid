@@ -128,6 +128,11 @@ class PlgUserCie extends CMSPlugin
 		Log::add(new LogEntry(__METHOD__, Log::DEBUG, 'plg_user_cie'));
 		Log::add(new LogEntry(print_r($options, true), Log::DEBUG, 'plg_user_cie'));
 
+		if ($this->app->isClient('administrator'))
+		{
+			return;
+		}
+
 		if (! $this->checkSPiD())
 		{
 			return;
